@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#160c20">
+<title>Kaosalter</title>
+<style>
+:root{
+  --bg:#160c20; --ink:#ece3d0; --dim:#a99bb8; --wax:#b0342f;
+  --h:285; --oct:hsl(var(--h),80%,66%);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{
+  margin:0; color:var(--ink);
+  font:1.075rem/1.65 "Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  background:radial-gradient(120% 60% at 50% 18%,#2b1640 0%,var(--bg) 62%) no-repeat,var(--bg);
+  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  min-height:100vh;
+}
+main{max-width:34rem;margin:0 auto;padding:1rem 1.25rem 4rem}
+h1{font-weight:400;font-size:clamp(2.6rem,12vw,4.2rem);line-height:1;margin:1.2rem 0 .6rem;letter-spacing:.01em}
+h2{font-weight:400;font-size:1.6rem;margin:4rem 0 .6rem}
+p{margin:0 0 1rem;max-width:32rem}
+.lede,.hint,small{color:var(--dim)}
+.hint{font-size:.95rem;text-align:center;margin-top:.5rem}
+
+#sphere{
+  display:block;width:100%;aspect-ratio:1;margin:.5rem 0 3rem;
+  touch-action:pan-y;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  border-radius:50%;
+}
+canvas:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--oct);outline-offset:4px}
+
+label{display:block;color:var(--dim);font-size:.95rem}
+input{
+  width:100%;margin:.4rem 0 1rem;padding:.6rem 0;
+  background:transparent;color:var(--ink);font:inherit;
+  border:0;border-bottom:1px solid var(--dim);border-radius:0;
+}
+.row{justify-content:center}
+button{display:inline-grid;place-items:center;min-width:48px}
+input.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@media (prefers-reduced-motion:reduce){input.shake{animation:none}}
+.row{display:flex;flex-wrap:wrap;gap:.6rem}
+button{
+  min-height:44px;padding:.55rem 1.1rem;font:inherit;color:var(--ink);
+  background:transparent;border:1px solid var(--dim);border-radius:3px;cursor:pointer;
+}
+button.main{background:var(--wax);border-color:var(--wax)}
+button:disabled{opacity:.4;cursor:default}
+button:not(:disabled):active{border-color:var(--oct)}
+
+#sigil{display:block;width:100%;max-width:22rem;aspect-ratio:1;margin:1.5rem auto 0}
+#sigil.burn{
+  transition:opacity 2.4s ease-in,filter 2.4s ease-in;
+  opacity:0;filter:sepia(1) saturate(5) hue-rotate(-35deg) blur(3px) brightness(1.5);
+}
+#letters{text-align:center;color:var(--dim);letter-spacing:.2em;min-height:1.7em;margin:.5rem 0 1rem}
+
+ol{padding-left:1.3rem;max-width:32rem}
+li{margin-bottom:.8rem}
+footer{margin-top:4rem;text-align:center;color:var(--dim)}
+@media (prefers-reduced-motion:reduce){#sigil.burn{transition-duration:.01s}}
+</style>
+</head>
+<body>
+<main>
+  <canvas id="sphere" tabindex="0" role="button" aria-label="Kaossfære"></canvas>
+
+  <input id="intent" type="text" maxlength="120" autocomplete="off" aria-label="Dit ønske">
+  <div class="row">
+    <button id="make" class="main" aria-label="Lav sigil" title="Lav sigil">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/></svg>
+    </button>
+    <button id="save" disabled aria-label="Gem billede" title="Gem billede">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>
+    </button>
+    <button id="burn" disabled aria-label="Brænd" title="Brænd">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z"/></svg>
+    </button>
+  </div>
+  <canvas id="sigil" aria-label="Din sigil"></canvas>
+  <div id="letters" aria-live="polite"></div>
+</main>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const root=document.documentElement;
+
+/* ---------- Kaossfære ---------- */
+const cv=$('#sphere'),cx=cv.getContext('2d');
+let W=0,last=0;
+let rot=0,base=reduce?0:.25,vel=base,pulse=0,hue=285,hueT=285;
+const ripples=[];
+
+function fit(canvas,ctx){
+  const dpr=Math.min(devicePixelRatio||1,2);
+  const w=canvas.getBoundingClientRect().width;
+  canvas.width=canvas.height=Math.round(w*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return w;
+}
+
+function draw(t){
+  const c=W/2,R=W*.46;
+  cx.globalCompositeOperation='destination-out';
+  cx.fillStyle='rgba(0,0,0,'+(reduce?1:.24)+')';
+  cx.fillRect(0,0,W,W);
+  cx.globalCompositeOperation='source-over';
+
+  for(let i=ripples.length-1;i>=0;i--){
+    const age=t-ripples[i];
+    if(age>1.3){ripples.splice(i,1);continue}
+    cx.strokeStyle='hsla('+(hue%360)+',85%,70%,'+(.55*(1-age/1.3))+')';
+    cx.lineWidth=2;
+    cx.beginPath();cx.arc(c,c,R*(.1+age*.75),0,6.2832);cx.stroke();
+  }
+
+  cx.save();cx.translate(c,c);cx.rotate(rot);
+  for(let i=0;i<8;i++){
+    const L=R*(.8+.05*Math.sin(t*1.6+i*.9)+pulse*.14*Math.sin(i*2.4+t*9));
+    const hd=R*.18,w=R*.08;
+    const col='hsl('+((hue+i*9)%360)+',85%,'+(62+pulse*12)+'%)';
+    cx.save();cx.rotate(i*Math.PI/4);
+    cx.strokeStyle=col;cx.fillStyle=col;cx.shadowColor=col;cx.shadowBlur=10+pulse*20;
+    cx.lineWidth=R*.032;cx.lineCap='round';
+    cx.beginPath();cx.moveTo(R*.08,0);cx.lineTo(L-hd,0);cx.stroke();
+    cx.beginPath();cx.moveTo(L,0);cx.lineTo(L-hd,-w);cx.lineTo(L-hd*.78,0);cx.lineTo(L-hd,w);cx.closePath();cx.fill();
+    cx.restore();
+  }
+  cx.restore();
+
+  cx.fillStyle='#ece3d0';cx.beginPath();cx.arc(c,c,R*.035+pulse*R*.03,0,6.2832);cx.fill();
+}
+
+function frame(ts){
+  const dt=Math.min((ts-last)/1000||.016,.05);last=ts;
+  vel+=(base-vel)*(1-Math.exp(-dt*.9));
+  rot+=vel*dt;
+  pulse*=Math.exp(-dt*2.2);
+  hue+=(hueT-hue)*(1-Math.exp(-dt*3));
+  draw(ts/1000);
+  requestAnimationFrame(frame);
+}
+
+function burst(){
+  if(!reduce)vel+=(Math.random()<.5?-1:1)*(9+Math.random()*5);
+  pulse=1;
+  hueT+=60+Math.random()*120;
+  root.style.setProperty('--h',Math.round(hueT%360));
+  ripples.push(performance.now()/1000);
+  if(navigator.vibrate)navigator.vibrate(15);
+}
+
+let down=null;
+cv.addEventListener('pointerdown',e=>{
+  cv.setPointerCapture(e.pointerId);
+  down={x:e.clientX,lx:e.clientX,moved:false};
+});
+cv.addEventListener('pointermove',e=>{
+  if(!down)return;
+  const dx=e.clientX-down.lx;down.lx=e.clientX;
+  if(Math.abs(e.clientX-down.x)>8)down.moved=true;
+  if(down.moved&&!reduce){rot+=dx/W*5;vel+=dx*.05}
+});
+cv.addEventListener('pointerup',()=>{if(down&&!down.moved)burst();down=null});
+cv.addEventListener('pointercancel',()=>{down=null});
+cv.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();burst()}});
+
+/* ---------- Sigil ---------- */
+const AB='ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅ',VOW='AEIOUYÆØÅ';
+const sg=$('#sigil'),sx=sg.getContext('2d');
+let S=0,cur='';
+
+function pt(ch){
+  const a=-Math.PI/2+AB.indexOf(ch)/AB.length*Math.PI*2,r=S*.4;
+  return [S/2+Math.cos(a)*r,S/2+Math.sin(a)*r];
+}
+
+function drawSigil(){
+  sx.clearRect(0,0,S,S);
+  sx.strokeStyle='rgba(169,155,184,.3)';sx.lineWidth=1;
+  sx.beginPath();sx.arc(S/2,S/2,S*.4,0,6.2832);sx.stroke();
+  sx.fillStyle='rgba(169,155,184,.45)';
+  for(const ch of AB){const p=pt(ch);sx.beginPath();sx.arc(p[0],p[1],2,0,6.2832);sx.fill()}
+  if(cur.length<2)return;
+  const pts=[...cur].map(pt);
+  const col='hsl('+(hueT%360)+',80%,70%)';
+  sx.strokeStyle=col;sx.shadowColor=col;sx.shadowBlur=8;
+  sx.lineWidth=2.6;sx.lineJoin=sx.lineCap='round';
+  sx.beginPath();pts.forEach((p,i)=>i?sx.lineTo(p[0],p[1]):sx.moveTo(p[0],p[1]));sx.stroke();
+  sx.beginPath();sx.arc(pts[0][0],pts[0][1],8,0,6.2832);sx.stroke();
+  const a=pts[pts.length-2],b=pts[pts.length-1];
+  const ang=Math.atan2(b[1]-a[1],b[0]-a[0])+Math.PI/2;
+  sx.beginPath();
+  sx.moveTo(b[0]-Math.cos(ang)*9,b[1]-Math.sin(ang)*9);
+  sx.lineTo(b[0]+Math.cos(ang)*9,b[1]+Math.sin(ang)*9);sx.stroke();
+  sx.shadowBlur=0;
+}
+
+$('#make').addEventListener('click',()=>{
+  let seen='';
+  for(const ch of $('#intent').value.toUpperCase()){
+    if(AB.includes(ch)&&!VOW.includes(ch)&&!seen.includes(ch))seen+=ch;
+  }
+  cur=seen.length>=2?seen:'';
+  $('#letters').textContent=cur;
+  if(!cur){const i=$('#intent');i.classList.remove('shake');void i.offsetWidth;i.classList.add('shake')}
+  $('#save').disabled=$('#burn').disabled=!cur;
+  sg.classList.remove('burn');
+  drawSigil();
+});
+$('#intent').addEventListener('keydown',e=>{if(e.key==='Enter')$('#make').click()});
+
+$('#save').addEventListener('click',()=>{
+  const t=document.createElement('canvas');
+  t.width=sg.width;t.height=sg.height;
+  const tc=t.getContext('2d');
+  tc.fillStyle='#160c20';tc.fillRect(0,0,t.width,t.height);
+  tc.drawImage(sg,0,0);
+  const a=document.createElement('a');
+  a.download='sigil.png';a.href=t.toDataURL('image/png');a.click();
+});
+
+$('#burn').addEventListener('click',()=>{
+  if(!cur)return;
+  $('#burn').disabled=$('#save').disabled=true;
+  sg.classList.add('burn');
+  setTimeout(()=>{
+    sg.classList.remove('burn');
+    cur='';$('#intent').value='';
+    $('#letters').textContent='';
+    drawSigil();
+  },reduce?50:2600);
+});
+
+/* ---------- Start ---------- */
+function layout(){W=fit(cv,cx);S=fit(sg,sx);drawSigil()}
+addEventListener('resize',layout);
+layout();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
