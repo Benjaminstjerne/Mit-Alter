@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#160c20">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Kaosalter</title>
 <style>
 :root{
@@ -65,27 +68,52 @@ ol{padding-left:1.3rem;max-width:32rem}
 li{margin-bottom:.8rem}
 footer{margin-top:4rem;text-align:center;color:var(--dim)}
 @media (prefers-reduced-motion:reduce){#sigil.burn{transition-duration:.01s}}
+
+html{scroll-snap-type:y mandatory}
+section{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem 1.25rem;scroll-snap-align:start;scroll-snap-stop:always}
+section>input,section>.row{width:min(100%,24rem)}
+#sphere{width:min(100%,76dvh);margin:0 auto}
+#wrap{position:relative;width:min(100%,22rem,calc((100dvh - 14rem)/1.25));aspect-ratio:1/1.25}
+#sigil{position:absolute;left:0;top:0;width:100%;max-width:none;margin:0}
+#fire{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#dots{position:fixed;right:.2rem;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;z-index:5}
+#dots button{width:28px;height:28px;min-width:0;min-height:0;padding:0;border:0;background:radial-gradient(circle,var(--dim) 3px,transparent 4px)}
+#dots button.on{background:radial-gradient(circle,var(--oct) 4px,transparent 5px)}
+#deck{perspective:1200px;width:min(62vw,15rem,calc(60dvh*.588));aspect-ratio:200/340;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#card{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.3,.7,.2,1)}
+#card.flip{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+#front{transform:rotateY(180deg)}
+.face svg{width:100%;height:100%;display:block;filter:drop-shadow(0 6px 18px rgba(0,0,0,.6))}
+@media (prefers-reduced-motion:reduce){#card{transition:none}}
+input,#letters,#note,button{color:var(--oct)}
+button.main{color:var(--ink)}
+input{caret-color:var(--oct);border-bottom-color:var(--oct);text-shadow:0 0 8px var(--oct)}
+#letters{text-shadow:0 0 8px var(--oct);font-size:1.15rem}
+.face text{fill:var(--oct)}
+#note{width:min(100%,22rem);min-height:5.5rem;margin-top:1.25rem;text-align:center;text-shadow:0 0 8px var(--oct)}
+#deck{width:min(62vw,15rem,calc(48dvh*.588))}
 </style>
 </head>
 <body>
-<main>
+<nav id="dots"><button aria-label="Kaoskompas"></button><button aria-label="Sigil"></button><button aria-label="Tarot"></button></nav>
+<section>
   <canvas id="sphere" tabindex="0" role="button" aria-label="Kaossfære"></canvas>
-
+</section>
+<section>
   <input id="intent" type="text" maxlength="120" autocomplete="off" aria-label="Dit ønske">
   <div class="row">
-    <button id="make" class="main" aria-label="Lav sigil" title="Lav sigil">
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/></svg>
-    </button>
-    <button id="save" disabled aria-label="Gem billede" title="Gem billede">
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>
-    </button>
-    <button id="burn" disabled aria-label="Brænd" title="Brænd">
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z"/></svg>
-    </button>
+    <button id="make" class="main" aria-label="Lav sigil" title="Lav sigil"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/></svg></button>
+    <button id="save" disabled aria-label="Gem billede" title="Gem billede"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg></button>
+    <button id="burn" disabled aria-label="Brænd" title="Brænd"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z"/></svg></button>
   </div>
-  <canvas id="sigil" aria-label="Din sigil"></canvas>
   <div id="letters" aria-live="polite"></div>
-</main>
+  <div id="wrap"><canvas id="sigil" aria-label="Din sigil"></canvas><canvas id="fire"></canvas></div>
+</section>
+<section>
+  <div id="deck" tabindex="0" role="button" aria-label="Træk et kort"><div id="card"><div class="face" id="back"></div><div class="face" id="front"></div></div></div>
+  <div id="note" aria-live="polite"></div>
+</section>
 
 <script>
 (()=>{
@@ -143,9 +171,9 @@ function frame(ts){
   const dt=Math.min((ts-last)/1000||.016,.05);last=ts;
   vel+=(base-vel)*(1-Math.exp(-dt*.9));
   rot+=vel*dt;
-  pulse*=Math.exp(-dt*2.2);
+  pulse*=Math.exp(-dt*2.2);hueT+=dt*10;
   hue+=(hueT-hue)*(1-Math.exp(-dt*3));
-  draw(ts/1000);
+  root.style.setProperty('--h',(hue%360).toFixed(1));if(cur&&++sf%3===0)drawSigil();draw(ts/1000);fireStep(dt,ts);
   requestAnimationFrame(frame);
 }
 
@@ -191,7 +219,7 @@ function drawSigil(){
   for(const ch of AB){const p=pt(ch);sx.beginPath();sx.arc(p[0],p[1],2,0,6.2832);sx.fill()}
   if(cur.length<2)return;
   const pts=[...cur].map(pt);
-  const col='hsl('+(hueT%360)+',80%,70%)';
+  const col='hsl('+(hue%360)+',80%,70%)';
   sx.strokeStyle=col;sx.shadowColor=col;sx.shadowBlur=8;
   sx.lineWidth=2.6;sx.lineJoin=sx.lineCap='round';
   sx.beginPath();pts.forEach((p,i)=>i?sx.lineTo(p[0],p[1]):sx.moveTo(p[0],p[1]));sx.stroke();
@@ -231,7 +259,7 @@ $('#save').addEventListener('click',()=>{
 $('#burn').addEventListener('click',()=>{
   if(!cur)return;
   $('#burn').disabled=$('#save').disabled=true;
-  sg.classList.add('burn');
+  sg.classList.add('burn');ignite();
   setTimeout(()=>{
     sg.classList.remove('burn');
     cur='';$('#intent').value='';
@@ -240,8 +268,116 @@ $('#burn').addEventListener('click',()=>{
   },reduce?50:2600);
 });
 
+/* ---------- Ild ---------- */
+const fc=$('#fire'),fx=fc.getContext('2d');
+let FW=0,FH=0,burnUntil=0,burnPts=[];const parts=[];
+function fitFire(){const d=Math.min(devicePixelRatio||1,2);FW=fc.getBoundingClientRect().width;FH=FW*1.25;fc.width=Math.round(FW*d);fc.height=Math.round(FH*d);fx.setTransform(d,0,0,d,0,0)}
+function ignite(){
+  burnPts=[];const p=[...cur].map(pt);
+  for(let i=1;i<p.length;i++)for(let k=0;k<8;k++){const u=k/8;burnPts.push([p[i-1][0]+(p[i][0]-p[i-1][0])*u,p[i-1][1]+(p[i][1]-p[i-1][1])*u])}
+  burnUntil=performance.now()+2600;
+}
+function spawn(x,y,v,l,sz){parts.push({x:x,y:y,vx:(Math.random()-.5)*FW*.1,vy:-v*(.6+Math.random()*.8),t:0,max:l*(.6+Math.random()*.6),s:sz})}
+function fireStep(dt,now){
+  if(!FW)return;
+  fx.globalCompositeOperation='source-over';fx.clearRect(0,0,FW,FH);
+  const burning=now<burnUntil,n=reduce?2:(burning?10:3);
+  for(let i=0;i<n;i++){
+    if(burning&&burnPts.length&&Math.random()<.85){const b=burnPts[Math.random()*burnPts.length|0];spawn(b[0],b[1],FW*.25,.9,FW*.05)}
+    else spawn(FW/2+(Math.random()-.5)*FW*.16,FH*.97,FW*.28,1.1,FW*.04);
+  }
+  fx.globalCompositeOperation='lighter';
+  for(let i=parts.length-1;i>=0;i--){
+    const p=parts[i];p.t+=dt;
+    if(p.t>=p.max){parts.splice(i,1);continue}
+    p.x+=p.vx*dt+Math.sin(p.t*9+p.y*.05)*FW*.1*dt;p.y+=p.vy*dt;
+    const u=p.t/p.max,r=p.s*(1-u*.7);
+    const g=fx.createRadialGradient(p.x,p.y,0,p.x,p.y,r);
+    g.addColorStop(0,'hsla('+(50-u*45)+',100%,'+(65-u*25)+'%,'+(.55*(1-u))+')');
+    g.addColorStop(1,'hsla(10,100%,40%,0)');
+    fx.fillStyle=g;fx.fillRect(p.x-r,p.y-r,r*2,r*2);
+  }
+}
+
+/* ---------- Fuldskærm og sektioner ---------- */
+addEventListener('click',()=>{
+  if(document.fullscreenElement||document.webkitFullscreenElement)return;
+  const f=root.requestFullscreen||root.webkitRequestFullscreen;
+  if(f)try{const r=f.call(root,{navigationUI:'hide'});if(r&&r.catch)r.catch(()=>{})}catch(e){}
+});
+const secs=[...document.querySelectorAll('section')],dots=[...document.querySelectorAll('#dots button')];
+dots.forEach((b,i)=>b.addEventListener('click',()=>secs[i].scrollIntoView({behavior:reduce?'auto':'smooth'})));
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)dots.forEach((b,i)=>b.classList.toggle('on',secs[i]===e.target))}),{threshold:.6});
+secs.forEach(x=>io.observe(x));
+
+/* ---------- Tarot ---------- */
+const SU=['Wands','Cups','Swords','Pentacles'],RK=['Ace','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Page','Knight','Queen','King'];
+const MJ=['The Fool','The Magician','The High Priestess','The Empress','The Emperor','The Hierophant','The Lovers','The Chariot','Strength','The Hermit','Wheel of Fortune','Justice','The Hanged Man','Death','Temperance','The Devil','The Tower','The Star','The Moon','The Sun','Judgement','The World'];
+const SYM=['M0-12V12M0-3L6-9M0 3L-6-3','M-8-8H8Q8 4 0 4Q-8 4-8-8ZM0 4V11M-5 11H5','M0-13V6M-6 6H6M0 6V12','M0-9L2.6-2.8L9-2.8L4 1.3L5.8 8L0 4.2L-5.8 8L-4 1.3L-9-2.8L-2.6-2.8Z'];
+const roman=n=>{let r='';for(const v of [[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']])while(n>=v[0]){r+=v[1];n-=v[0]}return r||'0'};
+const rnd=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const sym=(s,x,y,k,c)=>'<g transform="translate('+x+' '+y+') scale('+k+')" fill="none" stroke="'+c+'" stroke-width="'+(1.6/k)+'" stroke-linecap="round" stroke-linejoin="round"><path d="'+SYM[s]+'"/>'+(s==3?'<circle r="11"/>':'')+'</g>';
+
+function face(id){
+  const mj=id<22,s=mj?0:(id-22)/14|0,r=mj?0:(id-22)%14;
+  const c='hsl('+(mj?id*37%360:[25,200,265,140][s])+',72%,68%)';
+  let g='',name,top='';
+  if(mj){
+    const R=rnd(id*977+5),n=3+(R()*6|0);
+    for(let l=0;l<4;l++){
+      const rad=18+l*17,st=1+(R()*(n-1)|0),o=R()*6.28;let d='';
+      for(let i=0;i<n;i++){const a=o+i*st*6.2832/n;d+=(i?'L':'M')+(Math.cos(a)*rad).toFixed(1)+' '+(Math.sin(a)*rad).toFixed(1)}
+      g+='<path d="'+d+'Z" opacity="'+(.95-l*.15)+'"/>'+(R()<.6?'<circle r="'+rad+'" opacity=".35"/>':'');
+    }
+    g='<g transform="translate(100 165)" fill="none" stroke="'+c+'" stroke-width="1.5" stroke-linejoin="round">'+g+'<circle r="3" fill="'+c+'"/></g>';
+    name=MJ[id];top=roman(id);
+  }else{
+    name=RK[r]+' of '+SU[s];
+    if(r<10){
+      const n=r+1,cols=n==1?1:2,rows=Math.ceil(n/cols),k=n==1?5:n<5?2.8:2.2;
+      for(let i=0;i<n;i++){
+        const x=cols==1||(n%2&&i==n-1)?100:70+(i%2)*60,y=rows==1?165:80+(i/cols|0)*(170/(rows-1));
+        g+=sym(s,x,y,k,c);
+      }
+    }else{
+      const cnt=r-9;let d='';
+      for(let i=0;i<cnt;i++)d+='M'+(100-cnt*10+i*20)+' 78l10-18 10 18';
+      g=sym(s,100,170,5.5,c)+'<circle cx="100" cy="170" r="64" fill="none" stroke="'+c+'" stroke-dasharray="2 5" opacity=".6"/><path d="'+d+'" fill="none" stroke="'+c+'" stroke-width="1.6" stroke-linejoin="round"/>';
+    }
+  }
+  const f='font-family="Palatino,Georgia,serif" text-anchor="middle"';
+  return '<svg viewBox="0 0 200 340"><rect x="2" y="2" width="196" height="336" rx="10" fill="#1d0f2b" stroke="'+c+'"/><rect x="9" y="9" width="182" height="322" rx="6" fill="none" stroke="'+c+'" opacity=".4"/>'+g+'<text x="100" y="34" font-size="17" fill="'+c+'" '+f+'>'+top+'</text><text x="100" y="316" font-size="15" fill="#ece3d0" '+f+'>'+name+'</text></svg>';
+}
+
+let arrows='';for(let i=0;i<8;i++)arrows+='<path transform="rotate('+i*45+')" d="M0-12V-52M-8-42L0-54L8-42"/>';
+$('#back').innerHTML='<svg viewBox="0 0 200 340"><rect x="2" y="2" width="196" height="336" rx="10" fill="#1d0f2b" stroke="#a99bb8"/><rect x="9" y="9" width="182" height="322" rx="6" fill="none" stroke="#a99bb8" opacity=".4"/><g transform="translate(100 170)" stroke="#b58cf0" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+arrows+'</g></svg>';
+
+let deck=[],busy=false;
+function drawCard(){
+  if(busy)return;busy=true;
+  if(!deck.length){deck=[...Array(78).keys()];for(let i=77;i>0;i--){const j=Math.random()*(i+1)|0;const t=deck[i];deck[i]=deck[j];deck[j]=t}}
+  $('#note').textContent='';
+  const id=deck.pop(),card=$('#card'),fr=$('#front'),wait=card.classList.contains('flip')&&!reduce?450:0;
+  card.classList.remove('flip');
+  setTimeout(()=>{
+    fr.innerHTML=face(id);
+    const rev=Math.random()<.5;if(rev)fr.firstChild.style.transform='rotate(180deg)';
+    $('#note').textContent=desc(id)+(rev?' Omvendt: energien er blokeret, vendt indad eller forsinket.':'');
+    card.classList.add('flip');
+    if(navigator.vibrate)navigator.vibrate(15);
+    setTimeout(()=>{busy=false},reduce?0:700);
+  },wait);
+}
+$('#deck').addEventListener('click',drawCard);
+$('#deck').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();drawCard()}});
+
+const MD=['Nyt begyndelse, tillid og spring ud i det ukendte.','Vilje, evne og midlerne til at skabe det, du vil.','Intuition, hemmeligheder og indre viden.','Overflod, skabelse og omsorg.','Struktur, autoritet og stabilitet.','Tradition, tro og faste rammer.','Et valg, en forening og værdier i tråd.','Viljestyrke og sejr gennem kontrol.','Blid styrke, mod og selvbeherskelse.','Tilbagetrækning, søgen og indre lys.','Cyklusser, skæbne og et vendepunkt.','Sandhed, balance og konsekvens.','Overgivelse, pause og nyt perspektiv.','Afslutning, forvandling og slip.','Balance, tålmodighed og blanding.','Binding, afhængighed og skyggesiden.','Pludseligt sammenbrud og befrielse.','Håb, fornyelse og ro.','Illusion, drømme og det ubevidste.','Glæde, klarhed og livskraft.','Et kald, et opgør og genfødsel.','Fuldendelse, helhed og integration.'];
+const RM=['Et nyt frø','Valg og balance','Vækst og samarbejde','Stabilitet og hvile','Konflikt og tab','Hjælp og overgang','Prøve og vurdering','Bevægelse og flid','Næsten i mål','Fuldendelse og byrde','Nysgerrighed og nyt budskab','Jagt og drivkraft','Moden modtagelighed','Herredømme og ansvar'];
+const DM=['viljen og handlingen','følelserne og relationerne','tanken og konflikten','kroppen, arbejdet og pengene'];
+const desc=id=>id<22?MD[id]:RM[(id-22)%14]+' i '+DM[(id-22)/14|0]+'.';
+let sf=0;
 /* ---------- Start ---------- */
-function layout(){W=fit(cv,cx);S=fit(sg,sx);drawSigil()}
+function layout(){W=fit(cv,cx);S=fit(sg,sx);fitFire();drawSigil()}
 addEventListener('resize',layout);
 layout();
 requestAnimationFrame(frame);
