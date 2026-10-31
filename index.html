@@ -109,11 +109,13 @@ input{caret-color:var(--oct);border-bottom-color:var(--oct);text-shadow:0 0 8px 
 .die.roll{animation:tumble .45s linear infinite}
 @keyframes tumble{0%{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.12)}100%{transform:rotate(360deg) scale(1)}}
 @media (prefers-reduced-motion:reduce){.die.roll{animation:none}}
+#kompas{display:block;width:min(100%,76dvh);aspect-ratio:1;margin:0 auto;cursor:pointer;touch-action:pan-y;-webkit-tap-highlight-color:transparent}
+#hand{width:min(100%,26rem);min-height:60dvh;display:flex;align-items:center;justify-content:center;text-align:center;font-size:1.55rem;line-height:1.4;color:var(--oct);text-shadow:0 0 10px var(--oct);cursor:pointer;-webkit-tap-highlight-color:transparent}
 </style>
 </head>
 <body>
 <button id="mute" aria-label="Lyd"></button>
-<nav id="dots"><button aria-label="Kaoskompas"></button><button aria-label="Sigil"></button><button aria-label="Tarot"></button><button aria-label="Terninger"></button></nav>
+<nav id="dots"><button aria-label="Kaoskompas"></button><button aria-label="Sigil"></button><button aria-label="Tarot"></button><button aria-label="Terninger"></button><button aria-label="Kompas"></button><button aria-label="Handling"></button></nav>
 <section>
   <canvas id="sphere" tabindex="0" role="button" aria-label="Kaossfære"></canvas>
 </section>
@@ -138,6 +140,12 @@ input{caret-color:var(--oct);border-bottom-color:var(--oct);text-shadow:0 0 8px 
 </section>
 <section>
   <div class="dice"><button class="die" aria-label="Terning"></button><button class="die" aria-label="Terning"></button></div>
+</section>
+<section>
+  <canvas id="kompas" role="button" aria-label="Kaoskompas"></canvas>
+</section>
+<section>
+  <div id="hand" tabindex="0" role="button" aria-label="Ny handling"></div>
 </section>
 
 <script>
@@ -198,7 +206,7 @@ function frame(ts){
   rot+=vel*dt;
   pulse*=Math.exp(-dt*2.2);hueT+=dt*drift;
   hue+=(hueT-hue)*(1-Math.exp(-dt*3));
-  root.style.setProperty('--h',(hue%360).toFixed(1));if(cur&&++sf%3===0)drawSigil();draw(ts/1000);fireStep(dt,ts);
+  root.style.setProperty('--h',(hue%360).toFixed(1));if(cur&&++sf%3===0)drawSigil();draw(ts/1000);fireStep(dt,ts);if(secIdx===4)kdraw(dt,ts);
   requestAnimationFrame(frame);
 }
 
@@ -466,6 +474,7 @@ const sfx={
   tap(){tone(60,.5,.5,'sine',30);tone(NOTES[Math.random()*NOTES.length|0]*2,1.4,.12,'triangle');puff(.25,.15,2400,'highpass')},
   flip(){puff(.22,.25,1800);tone(180,.2,.12,'sine',90)},
   burn(){puff(2.6,.35,700);for(let i=0;i<32;i++)puff(.03,.3,3000+Math.random()*3000,'highpass',Math.random()*2.6)},
+  tick(){puff(.02,.2,3500,'highpass')},
   pop(){puff(.025,.12,2500+Math.random()*3000,'highpass')},
   dice(){for(let i=0;i<9;i++){puff(.05,.35,900+Math.random()*1800,'bandpass',i*.065+Math.random()*.03);tone(140+Math.random()*100,.06,.12,'square',0,i*.065)}tone(70,.35,.4,'sine',40,.65)}
 };
@@ -510,9 +519,73 @@ function roll(){
   },90);
 }
 dies.forEach(e=>{e.innerHTML=dieSvg(1+Math.random()*6|0);e.addEventListener('click',roll)});
+/* ---------- Kaoskompas ---------- */
+const kc=$('#kompas'),kx=kc.getContext('2d');
+let KW=0,ka=0,kw=0,kt=0,kk=30,kcc=4,kmode='still',kuntil=0,kj=0;
+const wr=d=>((d+Math.PI)%6.2832+6.2832)%6.2832-Math.PI;
+function kpick(now){
+  kmode=['seek','seek','jitter','spin','still','jump','drift'][Math.random()*7|0];
+  kuntil=now+1500+Math.random()*3500;
+  if(kmode==='seek'){kt=Math.random()*6.2832;kk=10+Math.random()*50;kcc=1.5+Math.random()*5}
+  else if(kmode==='spin')kw=(Math.random()<.5?-1:1)*(8+Math.random()*12);
+  else if(kmode==='jitter')kt=ka;
+  else if(kmode==='still'){kw=0;kuntil+=1500}
+  else if(kmode==='drift')kt=ka;
+}
+function kdraw(dt,now){
+  if(!KW)return;
+  if(now>kuntil)kpick(now);
+  if(kmode==='seek')kw+=(kk*wr(kt-ka)-kcc*kw)*dt;
+  else if(kmode==='jitter')kw+=((Math.random()-.5)*400+30*wr(kt-ka)-5*kw)*dt;
+  else if(kmode==='spin')kw*=Math.exp(-dt*.4);
+  else if(kmode==='drift'){kt+=(Math.random()-.5)*dt*4;kw+=(3*wr(kt-ka)-3*kw)*dt}
+  else if(kmode==='jump'){kw=0;if(now>kj){ka=Math.random()*6.2832;kj=now+180+Math.random()*500;sfx.tick();buzz(8)}}
+  else kw=0;
+  ka+=kw*dt;
+  const c=KW/2,R=KW*.46,h=(hue%360).toFixed(0);
+  kx.globalCompositeOperation='destination-out';kx.fillStyle='rgba(0,0,0,'+(reduce?1:.22)+')';kx.fillRect(0,0,KW,KW);
+  kx.globalCompositeOperation='source-over';
+  kx.save();kx.translate(c,c);
+  kx.strokeStyle='hsla('+h+',70%,70%,.7)';kx.lineWidth=2;
+  kx.beginPath();kx.arc(0,0,R,0,6.2832);kx.stroke();
+  for(let i=0;i<72;i++){const a=i*Math.PI/36,l=i%9===0?.12:i%3===0?.06:.03;kx.beginPath();kx.moveTo(Math.sin(a)*R*(1-l),-Math.cos(a)*R*(1-l));kx.lineTo(Math.sin(a)*R,-Math.cos(a)*R);kx.stroke()}
+  kx.rotate(ka);
+  const w=R*.09,L=R*.8;
+  kx.shadowColor='hsl('+h+',90%,60%)';kx.shadowBlur=14;
+  kx.fillStyle='hsl('+h+',85%,62%)';kx.beginPath();kx.moveTo(0,-L);kx.lineTo(w,0);kx.lineTo(-w,0);kx.closePath();kx.fill();
+  kx.fillStyle='rgba(236,227,208,.85)';kx.beginPath();kx.moveTo(0,L*.62);kx.lineTo(w,0);kx.lineTo(-w,0);kx.closePath();kx.fill();
+  kx.shadowBlur=0;kx.fillStyle='#160c20';kx.beginPath();kx.arc(0,0,w*.45,0,6.2832);kx.fill();
+  kx.restore();
+}
+kc.addEventListener('click',()=>{kuntil=0;kw+=(Math.random()-.5)*10;sfx.tick();buzz(12)});
+
+/* ---------- Tilfældige handlinger ---------- */
+const ACT=['Lav en lyd, du aldrig har lavet før','Hvisk et tilfældigt ord til en genstand','Skift hånd for alt, hvad du rører ved','Gå {n} skridt {retning}','Tæl til {n}, og stop midt i et tal','Find noget {farve}, og hold det i hånden','Tegn et symbol på din håndflade med fingeren','Tag kontakt til det første levende væsen, du ser','Skriv ordet „{ord}“ i luften med din {krop}','Efterlign en {dyr}','Byt plads med noget i rummet','Giv en fremmed et ærligt kompliment','Skriv en sætning, og gem den uden at læse den igen','Fortæl en hemmelighed til et træ eller en plante','Lyt efter den fjerneste lyd, du kan høre','Flyt tre ting i dit hjem til nye steder','Smag på noget, du plejer at ignorere','Rør ved noget koldt og noget varmt efter hinanden','Lav et lille offer af noget ubetydeligt','Drej {n} gange rundt, og sæt dig et nyt sted','Hold vejret, til du får lyst til at le','Tag et billede af noget, ingen ville fotografere','Kald din {krop} ved et nyt navn','Ring til nogen, du ikke har talt med længe','Fold et stykke papir til noget uden formål','Giv væk noget, du ikke behøver','Syng en melodi, du improviserer','Se dig selv i en refleksion, til det føles mærkeligt','Tegn en tilfældig streg, og gør den til noget','Sæt dig ved den nærmeste dør, og vent på noget','Sig et højt „nej“ til noget lille','Sig et højt „ja“ til noget lille','Gå uden mål, til du har mistet orienteringen','Skriv tre ord på bagsiden af din hånd','Spis noget uden at bruge hænderne','Lad din {krop} lede dig i {n} minutter','Opfind et ritual, og udfør det med det samme','Tænk på et andet sprog i {n} minutter','Kast en mønt, og følg den uden diskussion','Beskriv rummet, som om du var en {dyr}','Bær noget {farve} på dig resten af dagen','Lav en lille gave, og læg den, hvor den kan findes','Skriv en besked til dig selv om et år','Stå helt stille, og mærk din {krop}','Tal med dig selv, som var du en anden','Ryd op i én skuffe uden at tænke over det','Fortæl den første løgn, der falder dig ind, og indrøm den','Lav en lyd, hver gang du ånder ud','Bryd en vane i {n} minutter','Hold øjenkontakt med noget i {n} sekunder','Ryst hele kroppen i {n} sekunder','Tag en omvej, du ikke kender','Skriv et digt på ét minut, og vis det ikke til nogen','Bevæg dig, som om gulvet var varmt','Sig noget, du normalt ville holde tilbage','Slå op i en bog på måfå, og følg den første sætning','Tegn noget med lukkede øjne','Byt et stykke tøj med nogen eller noget','Hør en sang rygvendt til den er slut','Skab en regel for dig selv, der gælder til i morgen','Dans, til du ikke kan huske hvorfor','Opfind en hemmelig gest, og brug den tre gange i dag','Undlad at svare på det næste, du bliver spurgt om','Giv en kedelig genstand en ærefuld titel','Se på det, du plejer at undgå at se på','Brug den farve, du har mindst lyst til, til at tegne noget','Sig tak til noget, der ikke kan svare','Stå på ét ben, til du må give op','Find det mest ubrugte hjørne, og sid der et øjeblik','Skriv dit navn med din ikke-dominante hånd'];
+const HOW=['uden at tale','med lukkede øjne','baglæns','med den hånd, du ikke bruger','så langsomt du kan','så hurtigt du kan','som om ingen så det','som om alle så det','mens du smiler uden grund','i præcis syv sekunder','med fuld alvor','som en ceremoni','med et drilsk smil','så stille du kan','så højt du tør','med hele kroppen','mens du tæller baglæns fra {n}','uden at forklare det','som om det var en test','mens du tænker på noget helt andet','på tæer','med ét ben i luften'];
+const WHEN=['inden for de næste ti minutter','før du gør noget andet','næste gang du går gennem en dør','når du hører den næste lyd','så snart du har læst dette','inden solen går ned','næste gang nogen siger dit navn','når dit blik falder på noget {farve}','tre gange i dag','næste gang du sætter dig','inden du går i seng','i morgen ved første lejlighed','lige nu'];
+const SL={farve:['rødt','blåt','gult','grønt','hvidt','sort','lilla','orange','sølvfarvet'],retning:['til venstre','til højre','fremad','baglæns','på skrå','i en spiral','i zigzag'],dyr:['kat','krage','bjørn','snegl','ræv','edderkop','hest','hval','ugle','fisk'],krop:['venstre hånd','højre fod','skulder','pande','tunge','ryg','albue','nakke'],ord:['tærskel','nul','spejl','aske','bro','støj','nøgle','fald','ekko','tåge','urt','kaos']};
+const pk=a=>a[Math.random()*a.length|0];
+function handling(){
+  let t=pk(ACT);
+  if(Math.random()<.55)t+=' '+pk(HOW);
+  if(Math.random()<.4)t+=', '+pk(WHEN);
+  return t.replace(/\{(\w+)\}/g,(m,k)=>k==='n'?2+(Math.random()*12|0):pk(SL[k]))+'.';
+}
+const hd=$('#hand');let hbusy=false;
+hd.innerHTML='<svg viewBox="-60 -60 120 120" width="112" height="112" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">'+arrows+'</svg>';
+function nyHandling(){
+  if(hbusy)return;hbusy=true;buzz(20);
+  const fin=handling();let n=0;
+  const iv=setInterval(()=>{
+    if(++n>=(reduce?1:9)){clearInterval(iv);hd.textContent=fin;sfx.tap();buzz([30,40,60]);hbusy=false}
+    else{hd.textContent=handling();sfx.tick()}
+  },70);
+}
+hd.addEventListener('click',nyHandling);
+hd.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();nyHandling()}});
 let sf=0;
 /* ---------- Start ---------- */
-function layout(){W=fit(cv,cx);S=fit(sg,sx);fitFire();drawSigil()}
+function layout(){W=fit(cv,cx);S=fit(sg,sx);fitFire();KW=fit(kc,kx);drawSigil()}
 addEventListener('resize',layout);
 layout();
 requestAnimationFrame(frame);
