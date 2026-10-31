@@ -208,7 +208,7 @@ function burst(){
   hueT+=60+Math.random()*120;
   root.style.setProperty('--h',Math.round(hueT%360));
   ripples.push(performance.now()/1000);sfx.tap();
-  if(navigator.vibrate)navigator.vibrate(15);
+  buzz(15);
 }
 
 let down=null;
@@ -284,7 +284,7 @@ $('#save').addEventListener('click',()=>{
 $('#burn').addEventListener('click',()=>{
   if(!cur)return;
   $('#burn').disabled=$('#save').disabled=true;
-  sg.classList.add('burn');ignite();sfx.burn();
+  sg.classList.add('burn');ignite();sfx.burn();buzz(burnPat());
   setTimeout(()=>{
     sg.classList.remove('burn');
     cur='';$('#intent').value='';
@@ -392,7 +392,7 @@ function pick(d){
   setTimeout(()=>{
     fr.innerHTML=face(id);fr.firstChild.style.transform=rev?'rotate(180deg)':'';
     d.dataset.id=id;d.dataset.rev=rev?'1':'';card.classList.add('flip');
-    sfx.flip();if(navigator.vibrate)navigator.vibrate(15);
+    sfx.flip();buzz(15);
     say(d);setTimeout(()=>{d.busy=false},reduce?0:700);
   },wait);
 }
@@ -417,6 +417,23 @@ const MD=['Nyt begyndelse, tillid og spring ud i det ukendte.','Vilje, evne og m
 const RM=['Et nyt frø','Valg og balance','Vækst og samarbejde','Stabilitet og hvile','Konflikt og tab','Hjælp og overgang','Prøve og vurdering','Bevægelse og flid','Næsten i mål','Fuldendelse og byrde','Nysgerrighed og nyt budskab','Jagt og drivkraft','Moden modtagelighed','Herredømme og ansvar'];
 const DM=['viljen og handlingen','følelserne og relationerne','tanken og konflikten','kroppen, arbejdet og pengene'];
 const desc=id=>id<22?MD[id]:RM[(id-22)%14]+' i '+DM[(id-22)/14|0]+'.';
+/* ---------- Haptik ---------- */
+let sw;
+function buzz(p){
+  const a=[].concat(p);
+  if(navigator.vibrate){navigator.vibrate(a);return}
+  if(!sw){
+    sw=document.createElement('label');
+    sw.style.cssText='position:fixed;left:-99px;top:0;opacity:0;pointer-events:none';
+    sw.innerHTML='<input type="checkbox" switch>';
+    document.body.appendChild(sw);
+  }
+  let t=0;
+  a.forEach((v,i)=>{if(i%2===0)setTimeout(()=>sw.click(),t);t+=v});
+}
+const burnPat=()=>{const a=[];for(let i=0;i<14;i++)a.push(15+Math.random()*30|0,50+Math.random()*110|0);return a};
+const DICEPAT=[];for(let i=0;i<9;i++)DICEPAT.push(20,45);DICEPAT.push(150);
+
 /* ---------- Lyd ---------- */
 let ac,master,noiseB,muted=false,secIdx=0;const drn=[];
 function audio(){
@@ -478,7 +495,7 @@ function effect(a,b){
   pulse=1;ripples.push(performance.now()/1000);
 }
 function roll(){
-  if(rolling)return;rolling=true;sfx.dice();
+  if(rolling)return;rolling=true;sfx.dice();buzz(DICEPAT);
   dies.forEach(e=>e.classList.add('roll'));
   let n=0;
   const iv=setInterval(()=>{
