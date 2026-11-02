@@ -78,8 +78,8 @@ input.shake{animation:shake .35s}
 /* Skifer */
 #skifer{position:relative;padding:0;overflow:hidden;background:#000}
 #slab{position:absolute;inset:0;width:100%;height:100%;touch-action:pan-y}
-#dots,#mute{transition:opacity .4s}
-body.slab #dots,body.slab #mute{opacity:0;pointer-events:none}
+#dots,#mute,#mic{transition:opacity .4s}
+body.slab #dots,body.slab #mute,body.slab #mic{opacity:0;pointer-events:none}
 button.cold:not(:disabled){opacity:.55}
 #burn:not(.cold):not(:disabled){border-color:var(--oct);box-shadow:0 0 14px var(--oct)}
 
@@ -102,10 +102,14 @@ button.cold:not(:disabled){opacity:.55}
 #posinfo li span strong{font-weight:400;letter-spacing:.06em;text-transform:uppercase;font-size:.85rem;display:block}
 .pos{position:absolute;left:0;right:0;bottom:7%;text-align:center;font-style:normal;font-size:clamp(.7rem,2.6vw,.95rem);color:var(--oct);opacity:.8;text-shadow:0 0 6px var(--oct)}
 @media (prefers-reduced-motion:reduce){#posinfo{transition:none}}
+#mic{position:fixed;left:4.2rem;top:calc(.2rem + env(safe-area-inset-top));z-index:5;border:0;background:none;color:var(--dim)}
+#mic.live{color:var(--oct);filter:drop-shadow(0 0 8px var(--oct))}
+#mic.shake{animation:shake .35s}
 </style>
 </head>
 <body>
 <button id="mute" aria-label="Lyd"></button>
+<button id="mic" aria-label="Mikrofon"></button>
 <nav id="dots"><button aria-label="Kaossfære"></button><button aria-label="Sigil"></button><button aria-label="Tarot"></button><button aria-label="Terninger"></button><button aria-label="Kaoskompas"></button><button aria-label="Ord"></button><button aria-label="Skifer"></button></nav>
 <section>
   <canvas id="sphere" tabindex="0" role="button" aria-label="Kaossfære"></canvas>
@@ -203,6 +207,7 @@ function frame(ts){
   rot+=vel*dt;
   pulse*=Math.exp(-dt*2.2);
   charge*=Math.exp(-dt*.06);
+  micStep(dt,ts);
   if(mood===null)hueT+=dt*drift;
   else{mt+=dt*(.25+drift*.01);hueT=mood+45*Math.sin(mt)}
   if(droneLp&&++dc%12===0)droneLp.frequency.setTargetAtTime(320+charge*600,ac.currentTime,.3);
@@ -570,8 +575,61 @@ setInterval(()=>{                       /* skiferen: ildens bulder og knitren i 
 const SPK='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/>';
 const mu=$('#mute');
 function muteIcon(){mu.innerHTML=SPK+(muted?'<path d="M17 9l5 6M22 9l-5 6"/>':'<path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>')+'</svg>'}
-mu.addEventListener('click',()=>{muted=!muted;if(master)master.gain.setTargetAtTime(muted?0:.6,ac.currentTime,.05);muteIcon()});
+function applyGain(){if(master)master.gain.setTargetAtTime(muted?0:(micAn?.3:.6),ac.currentTime,.1)}
+mu.addEventListener('click',()=>{muted=!muted;applyGain();muteIcon()});
 muteIcon();
+
+/* ---------- Stemme: mikrofonen lader alteret ---------- */
+let micAn=null,micBuf=null,micStream=null,micSrc=null,voice=0,vFloor=.004,vPrev=0,vLast=0;
+const mic=$('#mic');
+const MICSVG='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>';
+function micIcon(){mic.innerHTML=MICSVG+(micAn?'':'<path d="M4 4l16 16"/>')+'</svg>';mic.classList.toggle('live',!!micAn)}
+async function micStart(){
+  audio();
+  if(!ac||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('ingen mikrofon');
+  micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:false,autoGainControl:false}});
+  if(ac.state==='suspended')await ac.resume();
+  micSrc=ac.createMediaStreamSource(micStream);
+  const an=ac.createAnalyser();an.fftSize=1024;an.smoothingTimeConstant=0;
+  micSrc.connect(an);micBuf=new Float32Array(an.fftSize);vFloor=.004;vPrev=0;micAn=an;
+}
+function micStop(){
+  if(micStream)micStream.getTracks().forEach(t=>t.stop());
+  try{if(micSrc)micSrc.disconnect()}catch(e){}
+  micAn=micSrc=micStream=null;voice=0;
+}
+mic.addEventListener('click',async()=>{
+  if(micAn){micStop()}
+  else{
+    try{await micStart()}
+    catch(e){micStop();mic.classList.remove('shake');void mic.offsetWidth;mic.classList.add('shake')}
+  }
+  micIcon();applyGain();
+});
+micIcon();
+
+/* En lyd tæller som et tryk på kaossfæren; vedvarende lyd lader ilden op. */
+function voiceBurst(){
+  if(!reduce)vel+=(Math.random()<.5?-1:1)*(6+Math.random()*5);
+  pulse=1;charge=Math.min(1,charge+.18);
+  if(secIdx===0){
+    if(mood===null)hueT+=30+Math.random()*60;else mt+=.8+Math.random()*1.2;
+    ripples.push(performance.now()/1000);
+  }
+}
+function micStep(dt,now){
+  if(!micAn){voice*=Math.exp(-dt*6);return}
+  micAn.getFloatTimeDomainData(micBuf);
+  let sum=0;for(let i=0;i<micBuf.length;i++)sum+=micBuf[i]*micBuf[i];
+  const rms=Math.sqrt(sum/micBuf.length);
+  vFloor+=(rms-vFloor)*(rms<vFloor?.3:.0015);            /* følger baggrundsstøjen, så den ikke tæller med */
+  const v=Math.min(1,Math.max(0,(rms-vFloor*1.25-.0015)*45));   /* følsomhed: hvisken er nok */
+  voice+=(v-voice)*(1-Math.exp(-dt*(v>voice?40:6)));
+  if(voice>.28&&vPrev<=.28&&now-vLast>180){vLast=now;voiceBurst()}
+  vPrev=voice;
+  charge=Math.min(1,charge+voice*dt*.5);
+  pulse=Math.max(pulse,voice*.8);
+}
 
 /* ---------- Terninger ---------- */
 const PIP={1:[[50,50]],2:[[28,28],[72,72]],3:[[28,28],[50,50],[72,72]],4:[[28,28],[72,28],[28,72],[72,72]],5:[[28,28],[72,28],[50,50],[28,72],[72,72]],6:[[28,24],[72,24],[28,50],[72,50],[28,76],[72,76]]};
@@ -738,15 +796,18 @@ precision highp float;
 precision mediump float;
 #endif
 uniform vec2 u_res;uniform float u_t;uniform vec4 u_slab;uniform vec4 u_rip[6];
-uniform float u_hue;uniform float u_charge;uniform float u_breath;uniform float u_calm;uniform float u_s;
+uniform float u_hue;uniform float u_charge;uniform float u_breath;uniform float u_calm;uniform float u_s;uniform float u_voice;
 float h11(float n){n=fract(n*.1031);n*=n+33.33;n*=n+n;return fract(n);}
 float h21(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h21(i),h21(i+vec2(1.,0.)),f.x),mix(h21(i+vec2(0.,1.)),h21(i+vec2(1.,1.)),f.x),f.y);}
 float fbm(vec2 p){float a=.5,s=0.;for(int i=0;i<4;i++){s+=a*vn(p);p=p*2.03+vec2(11.3,7.1);a*=.5;}return s;}
 vec3 pal(float t,float h){return .5+.5*cos(6.28318*(vec3(t)+vec3(0.,.33,.67)+h));}
 /* flammefelt: u = langs kanten, v = udad fra kanten */
-float field(float u,float v,float t){
-  return fbm(vec2(u*.075,v*.03-t*1.5))+.4*fbm(vec2(u*.17,v*.07-t*3.4));
+float field(float u,float v,float t,float w){
+  float ww=sin(u*.11-t*7.)+.6*sin(u*.27+t*11.);   /* bølger, der løber langs kanten */
+  u+=ww*w*5.;
+  v-=w*(8.+6.*ww);
+  return fbm(vec2(u*.075,v*.03-t*1.5))+.4*fbm(vec2(u*.17,v*.07-t*3.4))+ww*w*.16;
 }
 void main(){
   vec2 px=vec2(gl_FragCoord.x,u_res.y-gl_FragCoord.y);
@@ -772,17 +833,18 @@ void main(){
   float ax=abs(dv.x),ay=abs(dv.y);
   float wA=ay/(ax+ay);
   float fn=0.;
-  if(wA>.002)fn+=wA*field((pc.x+(dv.y>0.?190.:0.))*z,ay*z,t);
-  if(wA<.998)fn+=(1.-wA)*field((pc.y+(dv.x>0.?310.:70.))*z+500.,ax*z,t);
+  float vw=u_voice*(1.-.6*u_calm);
+  if(wA>.002)fn+=wA*field((pc.x+(dv.y>0.?190.:0.))*z,ay*z,t,vw);
+  if(wA<.998)fn+=(1.-wA)*field((pc.y+(dv.x>0.?310.:70.))*z+500.,ax*z,t,vw);
   float mx=u_res.x*.5-hb.x,my=u_res.y*.5-hb.y;
   float nx=dv.x/dl;
-  float H=mix(my,mx,nx*nx)*1.5*(.85+.2*u_breath)*(1.+.3*u_charge);
-  float f=clamp(fn*1.15+.08+front*.5-dl/H*1.2,0.,1.);
+  float H=mix(my,mx,nx*nx)*1.5*(.85+.2*u_breath)*(1.+.3*u_charge)*(1.+.4*vw);
+  float f=clamp(fn*1.15+.08+.1*vw+front*.5-dl/H*1.2,0.,1.);
   vec3 body=pal(.05,hs),tip=pal(.05,hs+.28);
   vec3 fc=mix(tip*.55,body,smoothstep(.1,.6,f));
   fc=mix(fc,mix(vec3(1.),body,.5),smoothstep(.72,1.,f));
   float fl=mix(.88+.12*h11(floor(t*18.)),.94,u_calm);
-  vec3 fire=fc*smoothstep(0.,.22,f)*(.4+.6*smoothstep(.1,.75,f))*fl;
+  vec3 fire=fc*smoothstep(0.,.22,f)*(.4+.6*smoothstep(.1,.75,f))*fl*(1.+.12*vw);
   vec3 col=mix(slab,vec3(.012,.008,.02)+fire,smoothstep(0.,1.5,dl));
   gl_FragColor=vec4(col,1.);
 }`;
@@ -799,7 +861,7 @@ if(gl){
     gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());
     gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
     const al=gl.getAttribLocation(pr,'a');gl.enableVertexAttribArray(al);gl.vertexAttribPointer(al,2,gl.FLOAT,false,0,0);
-    for(const n of ['u_res','u_t','u_slab','u_rip','u_hue','u_charge','u_breath','u_calm','u_s'])uL[n]=gl.getUniformLocation(pr,n);
+    for(const n of ['u_res','u_t','u_slab','u_rip','u_hue','u_charge','u_breath','u_calm','u_s','u_voice'])uL[n]=gl.getUniformLocation(pr,n);
   }
 }
 function fitSlab(){
@@ -812,7 +874,7 @@ function slabDraw(){
   gl.uniform2f(uL.u_res,SW,SH);gl.uniform1f(uL.u_t,slabTime());
   gl.uniform4f(uL.u_slab,...slabRect());
   gl.uniform4fv(uL.u_rip,rip);gl.uniform1f(uL.u_hue,hue%360);gl.uniform1f(uL.u_charge,charge);
-  gl.uniform1f(uL.u_breath,breath());gl.uniform1f(uL.u_calm,reduce?1:0);gl.uniform1f(uL.u_s,SQ);
+  gl.uniform1f(uL.u_breath,breath());gl.uniform1f(uL.u_calm,reduce?1:0);gl.uniform1f(uL.u_s,SQ);gl.uniform1f(uL.u_voice,voice);
   gl.drawArrays(gl.TRIANGLES,0,3);
 }
 function slabRipple(x,y){
