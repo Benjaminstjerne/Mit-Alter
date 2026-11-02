@@ -111,11 +111,13 @@ input{caret-color:var(--oct);border-bottom-color:var(--oct);text-shadow:0 0 8px 
 @media (prefers-reduced-motion:reduce){.die.roll{animation:none}}
 #kompas{display:block;width:min(100%,76dvh);aspect-ratio:1;margin:0 auto;cursor:pointer;touch-action:pan-y;-webkit-tap-highlight-color:transparent}
 #hand{width:min(100%,26rem);min-height:60dvh;display:flex;align-items:center;justify-content:center;text-align:center;font-size:1.55rem;line-height:1.4;color:var(--oct);text-shadow:0 0 10px var(--oct);cursor:pointer;-webkit-tap-highlight-color:transparent}
+#hand{flex-direction:column;gap:.6rem;font-size:2.2rem}
+#hand span{display:block}
 </style>
 </head>
 <body>
 <button id="mute" aria-label="Lyd"></button>
-<nav id="dots"><button aria-label="Kaoskompas"></button><button aria-label="Sigil"></button><button aria-label="Tarot"></button><button aria-label="Terninger"></button><button aria-label="Kompas"></button><button aria-label="Handling"></button></nav>
+<nav id="dots"><button aria-label="Kaoskompas"></button><button aria-label="Sigil"></button><button aria-label="Tarot"></button><button aria-label="Terninger"></button><button aria-label="Kompas"></button><button aria-label="Ord"></button></nav>
 <section>
   <canvas id="sphere" tabindex="0" role="button" aria-label="Kaossfære"></canvas>
 </section>
@@ -145,7 +147,7 @@ input{caret-color:var(--oct);border-bottom-color:var(--oct);text-shadow:0 0 8px 
   <canvas id="kompas" role="button" aria-label="Kaoskompas"></canvas>
 </section>
 <section>
-  <div id="hand" tabindex="0" role="button" aria-label="Ny handling"></div>
+  <div id="hand" tabindex="0" role="button" aria-label="Tre ord"></div>
 </section>
 
 <script>
@@ -559,34 +561,24 @@ function kdraw(dt,now){
 }
 kc.addEventListener('click',()=>{kuntil=0;kw+=(Math.random()-.5)*10;sfx.tick();buzz(12)});
 
-/* ---------- Tilfældige handlinger ---------- */
-const ACT=['Lav en lyd, du aldrig har lavet før','Hvisk et tilfældigt ord til {genstand}','Skift hånd for alt, hvad du rører ved','Gå {n} skridt {retning}','Tæl højt til {n}, og stop midt i et tal','Find noget {farve}, og hold det i hånden','Tegn et symbol på din håndflade med fingeren*','Tag kontakt til det første levende væsen, du ser','Skriv ordet „{ord}“ i luften med din {krop}*','Efterlign en {dyr}','Byt plads med noget i rummet','Giv en fremmed et ærligt kompliment','Skriv en sætning, og gem den uden at læse den igen*','Fortæl en hemmelighed til et træ eller en plante','Lyt efter den fjerneste lyd, du kan høre*','Flyt tre ting i dit hjem til nye steder','Smag på noget, du plejer at ignorere*','Rør ved noget koldt og noget varmt efter hinanden*','Lav et lille offer af noget ubetydeligt','Drej {n} gange rundt, og sæt dig et andet sted','Hold vejret i {n} sekunder*','Tag et billede af noget, ingen ville fotografere','Giv din {krop} et nyt navn','Ring til nogen, du ikke har talt med længe','Fold et stykke papir til noget uden formål*','Giv noget væk, du ikke behøver','Syng en melodi, du improviserer','Se dig selv i et spejl, til det føles mærkeligt','Tegn en tilfældig streg, og gør den til noget*','Sæt dig ved den nærmeste dør, og vent på noget*','Sig et højt „nej“ til noget lille','Sig et højt „ja“ til noget lille','Gå uden mål i {n} minutter','Skriv tre ord på bagsiden af din hånd*','Spis noget langsomt, og lyt til hver bid*','Lad din {krop} bestemme, hvordan du bevæger dig i {n} minutter','Opfind et ritual, og udfør det med det samme~','Tænk i et andet sprog i {n} minutter','Kast en mønt, og lad den afgøre dit næste valg','Beskriv rummet, som om du var en {dyr}','Bær noget {farve} på dig resten af dagen~','Lav en lille gave, og læg den, hvor den kan findes','Skriv en besked til dig selv, som du først læser om et år*','Stå helt stille, og mærk din {krop}*','Tal med dig selv, som om du var en anden','Ryd op i én skuffe uden at tænke over det','Fortæl en løgn, og indrøm den med det samme','Lav en lyd, hver gang du ånder ud','Bryd en vane i {n} minutter','Hold øjenkontakt med {genstand} i {n} sekunder','Ryst hele kroppen i {n} sekunder','Tag en omvej, du ikke kender','Skriv et digt på ét minut, og vis det ikke til nogen*','Bevæg dig, som om gulvet var varmt','Sig noget, du normalt ville holde tilbage','Slå op på en tilfældig side i en bog, og følg den første sætning','Tegn noget med lukkede øjne~','Tag noget på, du aldrig ville vælge','Lyt til en hel sang med ryggen mod lydkilden','Skab en regel for dig selv, der gælder til i morgen~','Dans, til du ikke kan huske, hvorfor','Opfind en hemmelig gestus, og brug den tre gange i dag~','Svar kun med ét ord på det næste, du bliver spurgt om','Giv {genstand} en ærefuld titel','Kig på det, du plejer at undgå at se på','Tegn noget i den farve, du har mindst lyst til*','Sig tak til noget, der ikke kan svare','Stå på ét ben i {n} sekunder','Sid et øjeblik i det mest ubrugte hjørne, du kan finde','Skriv dit navn med din ikke-dominante hånd','Hold {genstand} op mod lyset, og se, hvad der sker','Gem {genstand} et sted, hvor ingen ville lede','Giv {genstand} til den første person, du møder','Sæt dig {sted}, og bliv der et øjeblik','Stil dig {sted}, og vent på, at der sker noget','Smil til dig selv i et spejl uden grund','Skriv en liste med {n} ting, du ikke ved','Tegn din hånd uden at se på papiret~','Skriv en sætning baglæns*','Opfind et nyt ord, og brug det i din næste samtale','Giv en sky, en sten og en lyd hver sit navn','Find tre ting, der ligner hinanden, og stil dem sammen','Stil {genstand} et sted, hvor intet andet står','Byt plads på to ting på dit skrivebord','Byg et lille tårn af ting, du har i lommerne','Forestil dig, at {genstand} kan tale, og lyt efter','Giv en plante en opgave','Tal til din {krop} som til en gammel ven','Rejs dig og sæt dig igen, til det føles som en handling','Tæl trinene på den nærmeste trappe','Tegn det, du tænkte på for et øjeblik siden','Skriv en ting ned, du vil glemme, og riv papiret over','Skriv en ting ned, du vil huske, og gem den, hvor du finder den','Skift din telefons baggrund til noget, du ikke forstår','Slet noget, du ikke behøver, fra din telefon','Send en besked med kun ét tegn til nogen','Send en tak til nogen, der ikke venter den','Kig på himlen, til du ser noget, du ikke har set før','Find {n} ting i samme farve, og stil dem sammen','Lav en lyd, der passer til noget {farve}','Gentag det sidste, du sagde, med en anden stemme','Sig dit navn {n} gange, til det mister sin betydning','Fortæl nogen om en drøm, uden at forklare den','Lyt til den næste, du taler med, uden at sige noget','Stil et spørgsmål, du ikke forventer et svar på','Besvar det næste spørgsmål, du hører, med navnet på et dyr','Se på dine hænder, som om de var nye','Tag skoene af, og mærk gulvet under dig*','Hold noget tungt i hånden, og mærk dets vægt*','Vask hænder meget langsomt og opmærksomt','Spænd alle muskler i kroppen i {n} sekunder, og slip så*','Gab stort tre gange','Smil til den første fremmede, du ser','Lav et lille tegn på dit håndled, og husk, hvad det betyder','Skriv en gåde, og lad den ligge, hvor andre kan finde den','Skriv ordet „{ord}“ i støv, damp eller sand','Smid noget let op i luften, og grib det igen','Rul noget lille hen ad bordet, og følg det med øjnene','Lav en cirkel af små ting omkring {genstand}','Dæk {genstand} til med et stykke stof resten af dagen~','Kald på noget, du ikke kan se','Sig farvel til noget, du lader blive tilbage','Hils på rummet, næste gang du træder ind i det~','Gå ind i et rum og ud igen, som om du havde glemt noget','Vælg en genstand til dagens følgesvend, og bær den med dig~','Brug kun din ikke-dominante hånd resten af dagen~','Svar kun med spørgsmål i {n} minutter','Brug kun korte sætninger i {n} minutter','Sig det modsatte af det, du mener, en enkelt gang','Lad være med at sige „jeg“ i {n} minutter','Læs en tilfældig sætning højt for dig selv','Skriv en sætning med kun {n} ord','Lyt til stilheden, til du hører noget nyt*','Mærk din puls i {n} sekunder*','Lav en kort lyd i hvert rum, du går ind i','Følg en kant med fingeren, til den slutter','Lav en ny genvej i dit hjem, og brug den','Se på det sted, hvor du plejer at sidde, som om du var en fremmed','Følg den første duft, du lægger mærke til','Tæl de runde ting, du kan se','Find noget, der ligner et ansigt, og hils på det','Find noget, der er ældre end dig, og rør ved det','Tegn et kort over rummet fra hukommelsen*'];
-const HW=['med fuld alvor','som en ceremoni','med et drilsk smil','uden at forklare det','som om det var en test','som om ingen så det','som om alle så det','mens du tænker på noget helt andet','så langsomt du kan','så roligt du kan','med største omhu','uden at tale','så stille du kan','så højt du tør','med den hånd, du ikke bruger','som om det var din sidste gang','som om det var første gang','mens du bærer på en hemmelighed','med en alvorlig mine','som en gammel tradition','mens du nynner for dig selv','som om du var en anden','mens du lader, som om det er helt almindeligt','med hele din opmærksomhed','med en stille glæde','som en gave til nogen','på din egen måde','mens du ånder dybt','i rytme med dit åndedræt','mens du mærker dine fødder','uden at skynde dig','uden at tøve','med en vis højtidelighed','som om ingen havde sagt det til dig'];
-const EYES=['med lukkede øjne'];
-const WHEN=['Inden for de næste ti minutter','Før du gør noget andet','Næste gang du går gennem en dør','Næste gang du hører en lyd','Så snart du har læst dette','Inden solen går ned','Næste gang nogen siger dit navn','Når dit blik falder på noget {farve}','Tre gange i dag','Næste gang du sætter dig','Inden du går i seng','I morgen ved første lejlighed','Lige nu','Næste gang der er stille','Mens du venter på noget','Næste gang du åbner en dør','Før du spiser næste gang','Næste gang du ser dig selv i en refleksion','Så snart nogen nævner et dyr','Inden for en time','Midt i det, du er i gang med','Næste gang du gaber','Før det bliver mørkt','Næste gang du ler','Næste gang du tager din telefon i hånden','Når du næste gang går ud ad døren'];
-const SL={farve:['rødt','blåt','gult','grønt','hvidt','sort','lilla','orange','turkis','brunt','gråt','lyserødt','sølvfarvet'],retning:['til venstre','til højre','fremad','på skrå','i en spiral','i zigzag','i en cirkel'],dyr:['kat','krage','bjørn','snegl','ræv','edderkop','hest','hval','ugle','fisk','hund','mus','sommerfugl','ulv','and','hejre','sæl','myre','slange'],krop:['venstre hånd','højre fod','skulder','pande','tunge','ryg','albue','nakke','hage','hofte','kind','finger','tå','hals','mave'],ord:['tærskel','nul','spejl','aske','bro','støj','nøgle','fald','ekko','tåge','urt','kaos','tråd','sprække','lys','sne','ild','ur','dør','skygge','glimt','sand'],genstand:['en ske','en nøgle','en sok','et stykke papir','en kop','en sten','en blyant','en pude','et æble','en mønt','et ur','en knap','en kam','en lysestage','et glas'],sted:['ved et vindue','under et bord','i en dørkarm','på gulvet','udenfor','ved den nærmeste væg','bag en dør','ved det længste vindue','i et hjørne']};
+/* ---------- Tre ord ---------- */
+const WORDS='tærskel spejl aske bro støj nøgle ekko tåge tråd sprække lys sne ild ur dør skygge glimt sand vand sten kompas rod frø hul væg tag stige snor knude klokke nål fjer knogle mælk salt honning jern kobber glas lampe kort bog brev stemme hvisken skrig stilhed drøm hukommelse navn ansigt hånd øje hjerte åndedræt puls rytme dans sang bølge storm regn frost mørke solopgang måne stjerne kilde skov mark vej kryds omvej labyrint port have tårn kælder loft rum hjørne grænse hjul kugle terning mønt maske kappe krone ring spiral cirkel kvadrat linje prik vind rejse gave offer løgn hemmelighed gæld løfte tvivl tro tilfældighed skæbne vane bryde bøje falde flyve gemme grave huske glemme hviske lede låse mærke nynne omfavne opløse pege rense risikere samle skjule skifte slippe smelte spørge svæve synke tænde tømme vække vende våge åbne lukke ånde danse dryppe fryse bevæge tom fuld blød hård skarp stille høj sprød vild fremmed gammel ny skjult fælles forkert mørk langsom hurtig tung let skør blind døv bar hel brudt tavs varm kold sulten tørstig søvnig vågen skæv rund'.split(' ');
 const pk=a=>a[Math.random()*a.length|0];
-let bag=[];
-function nextAct(){
-  if(!bag.length){bag=ACT.map((_,i)=>i);for(let i=bag.length-1;i>0;i--){const j=Math.random()*(i+1)|0;const x=bag[i];bag[i]=bag[j];bag[j]=x}}
-  return ACT[bag.pop()];
-}
-function handling(preview){
-  let t=preview?pk(ACT):nextAct();
-  const eyes=t.endsWith('*'),nowhen=t.endsWith('~');
-  t=t.replace(/[*~]$/,'');
-  if(Math.random()<.6)t+=', '+pk(eyes?HW.concat(EYES):HW);
-  if(!nowhen&&Math.random()<.4)t=pk(WHEN)+': '+t[0].toLowerCase()+t.slice(1);
-  return t.replace(/\{(\w+)\}/g,(m,k)=>k==='n'?2+(Math.random()*12|0):pk(SL[k]))+'.';
+let wbag=[];
+function nextWord(){
+  if(!wbag.length){wbag=WORDS.map((_,i)=>i);for(let i=wbag.length-1;i>0;i--){const j=Math.random()*(i+1)|0;const x=wbag[i];wbag[i]=wbag[j];wbag[j]=x}}
+  return WORDS[wbag.pop()];
 }
 const hd=$('#hand');let hbusy=false;
 hd.innerHTML='<svg viewBox="-60 -60 120 120" width="112" height="112" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">'+arrows+'</svg>';
 function nyHandling(){
   if(hbusy)return;hbusy=true;buzz(20);
-  const fin=handling(false);let n=0;
+  const fin=[nextWord(),nextWord(),nextWord()],cur=[],last=reduce?1:9;let n=0;
   const iv=setInterval(()=>{
-    if(++n>=(reduce?1:9)){clearInterval(iv);hd.textContent=fin;sfx.tap();buzz([30,40,60]);hbusy=false}
-    else{hd.textContent=handling(true);sfx.tick()}
+    n++;
+    for(let i=0;i<3;i++)cur[i]=n>=(reduce?1:5+i*2)?fin[i]:pk(WORDS);
+    hd.innerHTML=cur.map(w=>'<span>'+w+'</span>').join('');
+    if(n>=last){clearInterval(iv);sfx.tap();buzz([30,40,60]);hbusy=false}else sfx.tick();
   },70);
 }
 hd.addEventListener('click',nyHandling);
