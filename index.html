@@ -38,7 +38,6 @@ input.shake{animation:shake .35s}
 #sphere{border-radius:50%}
 
 /* Sigil og ild */
-#letters{min-height:1.7em;margin:.5rem 0 1rem;text-align:center;letter-spacing:.2em;font-size:1.15rem;color:var(--oct);text-shadow:0 0 8px var(--oct)}
 #wrap{position:relative;width:min(100%,22rem,calc((100dvh - 14rem)/1.25));aspect-ratio:1/1.25}
 #sigil{display:block;position:absolute;left:0;top:0;width:100%;aspect-ratio:1}
 #sigil.burn{transition:opacity 2.4s ease-in,filter 2.4s ease-in;opacity:0;filter:sepia(1) saturate(5) hue-rotate(-35deg) blur(3px) brightness(1.5)}
@@ -76,6 +75,14 @@ input.shake{animation:shake .35s}
 #hand{width:min(100%,26rem);min-height:60dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;text-align:center;font-size:clamp(1.6rem,7.5vw,2.2rem);line-height:1.4;color:var(--oct);text-shadow:0 0 10px var(--oct);cursor:pointer;-webkit-tap-highlight-color:transparent}
 #hand span{display:block;max-width:100%;overflow-wrap:anywhere}
 
+/* Skifer */
+#skifer{position:relative;padding:0;overflow:hidden;background:#000}
+#slab{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;touch-action:pan-y}
+#dots,#mute{transition:opacity .4s}
+body.slab #dots,body.slab #mute{opacity:0;pointer-events:none}
+button.cold:not(:disabled){opacity:.55}
+#burn:not(.cold):not(:disabled){border-color:var(--oct);box-shadow:0 0 14px var(--oct)}
+
 @media (prefers-reduced-motion:reduce){
   input.shake,.die.roll,.die.land svg{animation:none}
   #sigil.burn{transition-duration:.01s}
@@ -85,7 +92,7 @@ input.shake{animation:shake .35s}
 </head>
 <body>
 <button id="mute" aria-label="Lyd"></button>
-<nav id="dots"><button aria-label="Kaossfære"></button><button aria-label="Sigil"></button><button aria-label="Tarot"></button><button aria-label="Terninger"></button><button aria-label="Kaoskompas"></button><button aria-label="Ord"></button></nav>
+<nav id="dots"><button aria-label="Kaossfære"></button><button aria-label="Sigil"></button><button aria-label="Tarot"></button><button aria-label="Terninger"></button><button aria-label="Kaoskompas"></button><button aria-label="Ord"></button><button aria-label="Skifer"></button></nav>
 <section>
   <canvas id="sphere" tabindex="0" role="button" aria-label="Kaossfære"></canvas>
 </section>
@@ -96,8 +103,7 @@ input.shake{animation:shake .35s}
     <button id="save" disabled aria-label="Gem billede" title="Gem billede"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg></button>
     <button id="burn" disabled aria-label="Brænd" title="Brænd"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z"/></svg></button>
   </div>
-  <div id="letters" aria-live="polite"></div>
-  <div id="wrap"><canvas id="sigil" aria-label="Din sigil"></canvas><canvas id="fire"></canvas></div>
+    <div id="wrap"><canvas id="sigil" aria-label="Din sigil"></canvas><canvas id="fire"></canvas></div>
 </section>
 <section>
   <div id="picker">
@@ -117,6 +123,7 @@ input.shake{animation:shake .35s}
 <section>
   <div id="hand" tabindex="0" role="button" aria-label="Tre ord"></div>
 </section>
+<section id="skifer"><canvas id="slab" aria-label="Skifer"></canvas></section>
 
 <script>
 /* Kaosalter. Sider: kaossfære, sigil, tarot, terninger, kaoskompas, tre ord.
@@ -189,7 +196,9 @@ function frame(ts){
   if(cur&&++sf%3===0)drawSigil();
   draw(ts/1000);
   fireStep(dt,ts);
+  updateBurn();
   if(secIdx===4)kdraw(dt,ts);
+  if(secIdx===6)slabDraw();
   requestAnimationFrame(frame);
 }
 
@@ -254,11 +263,11 @@ $('#make').addEventListener('click',()=>{
   for(const ch of $('#intent').value.toUpperCase()){
     if(AB.includes(ch)&&!VOW.includes(ch)&&!seen.includes(ch))seen+=ch;
   }
-  cur=seen.length>=2?seen:'';
-  if(cur)wish=cur;
-  $('#letters').textContent=cur;
-  if(!cur){const i=$('#intent');i.classList.remove('shake');void i.offsetWidth;i.classList.add('shake')}
-  $('#save').disabled=$('#burn').disabled=!cur;
+  const inp=$('#intent');
+  if(seen.length<2){inp.classList.remove('shake');void inp.offsetWidth;inp.classList.add('shake');return}
+  cur=wish=seen;
+  inp.value='';
+  $('#save').disabled=false;
   sg.classList.remove('burn');
   drawSigil();
 });
@@ -274,16 +283,23 @@ $('#save').addEventListener('click',()=>{
   a.download='sigil.png';a.href=t.toDataURL('image/png');a.click();
 });
 
-$('#burn').addEventListener('click',()=>{
+const BURN_AT=.55,bb=$('#burn');
+let burnReady=false;
+function updateBurn(){
+  const has=!!cur&&performance.now()>burnUntil;
+  const r=has&&(burnReady?charge>=BURN_AT*.45:charge>=BURN_AT);
+  bb.disabled=!has;bb.classList.toggle('cold',!r);burnReady=r;
+}
+function fizzle(){
+  for(let i=0;i<10;i++)spawn(FW/2+(Math.random()-.5)*FW*.3,FH*.9,FW*.2,.5,FW*.03);
+  sfx.pop(.2);buzz(6);
+}
+bb.addEventListener('click',()=>{
   if(!cur)return;
-  $('#burn').disabled=$('#save').disabled=true;
+  if(!burnReady){fizzle();return}
+  $('#save').disabled=true;
   sg.classList.add('burn');ignite();sfx.burn();buzz(burnPat());
-  setTimeout(()=>{
-    sg.classList.remove('burn');
-    cur='';$('#intent').value='';
-    $('#letters').textContent='';
-    drawSigil();
-  },reduce?50:2600);
+  setTimeout(()=>{sg.classList.remove('burn');cur='';drawSigil()},reduce?50:2600);
 });
 
 /* ---------- Ild ---------- */
@@ -294,6 +310,7 @@ function ignite(){
   burnPts=[];const p=[...cur].map(pt);
   for(let i=1;i<p.length;i++)for(let k=0;k<8;k++){const u=k/8;burnPts.push([p[i-1][0]+(p[i][0]-p[i-1][0])*u,p[i-1][1]+(p[i][1]-p[i-1][1])*u])}
   burnUntil=performance.now()+2600;
+  charge*=.35;
 }
 function spawn(x,y,v,l,sz){parts.push({x:x,y:y,vx:(Math.random()-.5)*FW*.1,vy:-v*(.6+Math.random()*.8),t:0,max:l*(.6+Math.random()*.6),s:sz})}
 function fireStep(dt,now){
@@ -325,7 +342,7 @@ addEventListener('click',()=>{
 });
 const secs=[...document.querySelectorAll('section')],dots=[...document.querySelectorAll('#dots button')];
 dots.forEach((b,i)=>b.addEventListener('click',()=>secs[i].scrollIntoView({behavior:reduce?'auto':'smooth'})));
-const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){dots.forEach((b,i)=>b.classList.toggle('on',secs[i]===e.target));secIdx=secs.indexOf(e.target)}}),{threshold:.6});
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){dots.forEach((b,i)=>b.classList.toggle('on',secs[i]===e.target));secIdx=secs.indexOf(e.target);document.body.classList.toggle('slab',secIdx===6)}}),{threshold:.6});
 secs.forEach(x=>io.observe(x));
 
 /* ---------- Tarot ---------- */
@@ -429,7 +446,7 @@ const burnPat=()=>{const a=[];for(let i=0;i<14;i++)a.push(15+Math.random()*30|0,
 const DICEPAT=[];for(let i=0;i<9;i++)DICEPAT.push(20,45);DICEPAT.push(150);
 
 /* ---------- Lyd ---------- */
-let ac,master,noiseB,muted=false;const drn=[];
+let ac,master,noiseB,muted=false,breathG=null,hissG=null;const drn=[];
 function audio(){
   if(!ac){
     try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){return}
@@ -437,6 +454,14 @@ function audio(){
     noiseB=ac.createBuffer(1,ac.sampleRate,ac.sampleRate);
     const d=noiseB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
     const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=320;droneLp=lp;
+    breathG=ac.createGain();breathG.gain.value=0;
+    const bs=ac.createBufferSource(),bf=ac.createBiquadFilter();
+    bs.buffer=noiseB;bs.loop=true;bf.type='bandpass';bf.frequency.value=450;bf.Q.value=.7;
+    bs.connect(bf);bf.connect(breathG);breathG.connect(master);bs.start();
+    hissG=ac.createGain();hissG.gain.value=0;   /* ildens bulder */
+    const hz=ac.createBufferSource(),hf=ac.createBiquadFilter();
+    hz.buffer=noiseB;hz.loop=true;hz.playbackRate.value=1.7;hf.type='bandpass';hf.frequency.value=650;hf.Q.value=.5;
+    hz.connect(hf);hf.connect(hissG);hissG.connect(master);hz.start();
     const g=ac.createGain();g.gain.value=.16;lp.connect(g);g.connect(master);
     [55,55.35,82.4].forEach(f=>{const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=f*pitchMul;o.connect(lp);o.start();drn.push([o,f])});
     const l=ac.createOscillator(),lg=ac.createGain();l.frequency.value=.06;lg.gain.value=120;l.connect(lg);lg.connect(lp.frequency);l.start();
@@ -461,13 +486,21 @@ const sfx={
   flip(){puff(.22,.25,1800);tone(180,.2,.12,'sine',90)},
   burn(){puff(2.6,.35,700);for(let i=0;i<32;i++)puff(.03,.3,3000+Math.random()*3000,'highpass',Math.random()*2.6)},
   tick(){puff(.02,.2,3500,'highpass')},
-  pop(){puff(.025,.12,2500+Math.random()*3000,'highpass')},
+  static(){puff(.5,.35,5000,'highpass');puff(.35,.25,900);tone(70,.4,.25,'sine',35)},
+  pop(v){puff(.025,v||.12,2500+Math.random()*3000,'highpass')},
   dice(){for(let i=0;i<9;i++){puff(.05,.35,900+Math.random()*1800,'bandpass',i*.065+Math.random()*.03);tone(140+Math.random()*100,.06,.12,'square',0,i*.065)}tone(70,.35,.4,'sine',40,.65)}
 };
 addEventListener('pointerup',audio,true);
 addEventListener('keydown',audio,true);
 document.addEventListener('visibilitychange',()=>{if(ac)document.hidden?ac.suspend():ac.resume()});
 setInterval(()=>{if(ac&&!muted&&secIdx===1&&Math.random()<.55)sfx.pop()},260);
+setInterval(()=>{                       /* skiferen: ildens bulder og knitren i åndedrættets rytme */
+  if(!ac||muted||!breathG)return;
+  const on=secIdx===6,b=breath();
+  breathG.gain.setTargetAtTime(on?.015+.07*b:0,ac.currentTime,.15);
+  if(hissG)hissG.gain.setTargetAtTime(on?.03+.03*b+.04*charge:0,ac.currentTime,.2);
+  if(on&&Math.random()<.2+.5*b*b+.3*charge)sfx.pop(.08+.25*b);
+},100);
 const SPK='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/>';
 const mu=$('#mute');
 function muteIcon(){mu.innerHTML=SPK+(muted?'<path d="M17 9l5 6M22 9l-5 6"/>':'<path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>')+'</svg>'}
@@ -615,8 +648,116 @@ function nyHandling(){
 }
 hd.addEventListener('click',nyHandling);
 hd.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();nyHandling()}});
+/* ---------- Skifer (WebGL) ---------- */
+const BREATH=10;   /* sekunder pr. åndedrag */
+const SLAB={cm:1};   /* ildbåndets bredde i centimeter; skiferen fylder resten af skærmen */
+const PX_PER_CM=60;   /* ca. CSS-pixel pr. cm på en telefon */
+function slabRect(){const m=SLAB.cm*PX_PER_CM*.6;return[m,m,SW-m,SH-m]}
+const breath=()=>.5+.5*Math.sin(performance.now()/1000*6.28318/BREATH-1.5708);
+const slabTime=()=>(performance.now()/1000*(reduce?.3:1))%3600;
+const VS='attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
+const FS=`
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+uniform vec2 u_res;uniform float u_t;uniform vec4 u_slab;uniform vec4 u_rip[6];
+uniform float u_hue;uniform float u_charge;uniform float u_breath;uniform float u_calm;
+float h11(float n){n=fract(n*.1031);n*=n+33.33;n*=n+n;return fract(n);}
+float h21(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
+float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h21(i),h21(i+vec2(1.,0.)),f.x),mix(h21(i+vec2(0.,1.)),h21(i+vec2(1.,1.)),f.x),f.y);}
+float fbm(vec2 p){float a=.5,s=0.;for(int i=0;i<4;i++){s+=a*vn(p);p=p*2.03+vec2(11.3,7.1);a*=.5;}return s;}
+vec3 pal(float t,float h){return .5+.5*cos(6.28318*(vec3(t)+vec3(0.,.33,.67)+h));}
+float flame(float per,float dl,float t,float L){
+  float a=per/L;
+  float n1=mix(fbm(vec2(per*.075,dl*.03-t*1.5)),fbm(vec2((per-L)*.075,dl*.03-t*1.5)),a);
+  float n2=mix(fbm(vec2(per*.17,dl*.07-t*3.4)),fbm(vec2((per-L)*.17,dl*.07-t*3.4)),a);
+  return n1+.4*n2;
+}
+void main(){
+  vec2 px=vec2(gl_FragCoord.x,u_res.y-gl_FragCoord.y);
+  float t=u_t;
+  float front=0.;
+  for(int i=0;i<6;i++){
+    vec4 r=u_rip[i];float age=u_t-r.z;
+    if(r.w>0.&&age>0.&&age<3.){
+      float dd=length(px-r.xy),rad=age*u_res.y*.45,w=u_res.y*.06,k=(dd-rad)/w;
+      front+=exp(-k*k)*(1.-age/3.);
+    }
+  }
+  vec2 ctr=(u_slab.xy+u_slab.zw)*.5,hb=(u_slab.zw-u_slab.xy)*.5;
+  vec2 pc=px-ctr;
+  vec2 cl=clamp(pc,-hb,hb);
+  float dl=length(pc-cl);
+  float inside=step(dl,.001);
+  float hn=u_hue/360.;
+  float hs=hn+.12*sin(atan(pc.y,pc.x)*2.+t*.6);
+  float per;
+  if(abs(cl.y+hb.y)<.5)per=cl.x+hb.x;
+  else if(abs(cl.x-hb.x)<.5)per=2.*hb.x+cl.y+hb.y;
+  else if(abs(cl.y-hb.y)<.5)per=3.*hb.x+2.*hb.y-cl.x;
+  else per=4.*hb.x+2.*hb.y+hb.y-cl.y;
+  float L=4.*(hb.x+hb.y);
+  float H=(u_res.x*.5-hb.x)*1.15*(.85+.2*u_breath)*(1.+.3*u_charge);
+  float fn=flame(per,dl,t,L);
+  float f=clamp(fn*1.15+.08+front*.5-dl/H*1.2,0.,1.)*(1.-inside);
+  vec3 body=pal(.05,hs),tip=pal(.05,hs+.28);
+  vec3 fc=mix(tip*.7,body,smoothstep(.08,.5,f));
+  fc=mix(fc,mix(vec3(1.),body,.5),smoothstep(.72,1.,f));
+  float fl=mix(.88+.12*h11(floor(t*18.)),.94,u_calm);
+  vec3 fire=fc*smoothstep(.03,.12,f)*fl;
+  vec3 slab=vec3(.014,.014,.022);
+  vec3 col=mix(slab,vec3(.012,.008,.02)+fire,1.-inside);
+  gl_FragColor=vec4(col,1.);
+}`;
+const sc=$('#slab');
+let gl=null,SW=0,SH=0,ri=0;const uL={},rip=new Float32Array(24);
+try{gl=sc.getContext('webgl',{antialias:false,alpha:false,powerPreference:'low-power'})}catch(e){}
+if(gl){
+  const mk=(type,src)=>{const sh=gl.createShader(type);gl.shaderSource(sh,src);gl.compileShader(sh);return sh};
+  const pr=gl.createProgram();
+  gl.attachShader(pr,mk(gl.VERTEX_SHADER,VS));gl.attachShader(pr,mk(gl.FRAGMENT_SHADER,FS));gl.linkProgram(pr);
+  if(!gl.getProgramParameter(pr,gl.LINK_STATUS))gl=null;
+  else{
+    gl.useProgram(pr);
+    gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+    const al=gl.getAttribLocation(pr,'a');gl.enableVertexAttribArray(al);gl.vertexAttribPointer(al,2,gl.FLOAT,false,0,0);
+    for(const n of ['u_res','u_t','u_slab','u_rip','u_hue','u_charge','u_breath','u_calm'])uL[n]=gl.getUniformLocation(pr,n);
+  }
+}
+function fitSlab(){
+  const r=sc.getBoundingClientRect(),q=.6;   /* lavere opløsning: grov, digital støj og let på batteriet */
+  SW=Math.max(2,Math.round(r.width*q));SH=Math.max(2,Math.round(r.height*q));
+  sc.width=SW;sc.height=SH;if(gl)gl.viewport(0,0,SW,SH);
+}
+function slabDraw(){
+  if(!gl||!SW)return;
+  gl.uniform2f(uL.u_res,SW,SH);gl.uniform1f(uL.u_t,slabTime());
+  gl.uniform4f(uL.u_slab,...slabRect());
+  gl.uniform4fv(uL.u_rip,rip);gl.uniform1f(uL.u_hue,hue%360);gl.uniform1f(uL.u_charge,charge);
+  gl.uniform1f(uL.u_breath,breath());gl.uniform1f(uL.u_calm,reduce?1:0);
+  gl.drawArrays(gl.TRIANGLES,0,3);
+}
+function slabRipple(x,y){
+  rip.set([x,y,slabTime(),1],ri*4);ri=(ri+1)%6;
+  sfx.static();buzz([10,30,14]);
+}
+let sdn=null;
+sc.addEventListener('pointerdown',e=>{sdn={x:e.clientX,y:e.clientY,mv:false}});
+sc.addEventListener('pointermove',e=>{if(sdn&&Math.hypot(e.clientX-sdn.x,e.clientY-sdn.y)>12)sdn.mv=true});
+sc.addEventListener('pointerup',e=>{
+  if(sdn&&!sdn.mv){
+    const r=sc.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*SW,y=(e.clientY-r.top)/r.height*SH;
+    const R=slabRect();if(x<R[0]||x>R[2]||y<R[1]||y>R[3])slabRipple(x,y);   /* kun uden for kvadratet */
+  }
+  sdn=null;
+});
+sc.addEventListener('pointercancel',()=>{sdn=null});
+
 /* ---------- Start ---------- */
-function layout(){W=fit(cv,cx);S=fit(sg,sx);fitFire();KW=fit(kc,kx);drawSigil()}
+function layout(){W=fit(cv,cx);S=fit(sg,sx);fitFire();KW=fit(kc,kx);fitSlab();drawSigil()}
 addEventListener('resize',layout);
 layout();
 requestAnimationFrame(frame);
