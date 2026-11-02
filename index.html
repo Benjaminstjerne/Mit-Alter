@@ -113,6 +113,8 @@ input{caret-color:var(--oct);border-bottom-color:var(--oct);text-shadow:0 0 8px 
 #hand{width:min(100%,26rem);min-height:60dvh;display:flex;align-items:center;justify-content:center;text-align:center;font-size:1.55rem;line-height:1.4;color:var(--oct);text-shadow:0 0 10px var(--oct);cursor:pointer;-webkit-tap-highlight-color:transparent}
 #hand{flex-direction:column;gap:.6rem;font-size:2.2rem}
 #hand span{display:block}
+#hand{position:relative;z-index:1;font-size:clamp(1.6rem,7.5vw,2.2rem)}
+#hand span{max-width:100%;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -562,21 +564,36 @@ function kdraw(dt,now){
 kc.addEventListener('click',()=>{kuntil=0;kw+=(Math.random()-.5)*10;sfx.tick();buzz(12)});
 
 /* ---------- Tre ord ---------- */
-const WORDS='tærskel spejl aske bro støj nøgle ekko tåge tråd sprække lys sne ild ur dør skygge glimt sand vand sten kompas rod frø hul væg tag stige snor knude klokke nål fjer knogle mælk salt honning jern kobber glas lampe kort bog brev stemme hvisken skrig stilhed drøm hukommelse navn ansigt hånd øje hjerte åndedræt puls rytme dans sang bølge storm regn frost mørke solopgang måne stjerne kilde skov mark vej kryds omvej labyrint port have tårn kælder loft rum hjørne grænse hjul kugle terning mønt maske kappe krone ring spiral cirkel kvadrat linje prik vind rejse gave offer løgn hemmelighed gæld løfte tvivl tro tilfældighed skæbne vane bryde bøje falde flyve gemme grave huske glemme hviske lede låse mærke nynne omfavne opløse pege rense risikere samle skjule skifte slippe smelte spørge svæve synke tænde tømme vække vende våge åbne lukke ånde danse dryppe fryse bevæge tom fuld blød hård skarp stille høj sprød vild fremmed gammel ny skjult fælles forkert mørk langsom hurtig tung let skør blind døv bar hel brudt tavs varm kold sulten tørstig søvnig vågen skæv rund'.split(' ');
+const ALL='tærskel spejl aske bro støj nøgle ekko tåge tråd sprække lys sne ild ur dør skygge glimt sand vand sten kompas rod frø hul væg tag stige snor knude klokke nål fjer knogle mælk salt honning jern kobber glas lampe kort bog brev stemme hvisken skrig stilhed drøm hukommelse navn ansigt hånd øje hjerte åndedræt puls rytme dans sang bølge storm regn frost mørke solopgang måne stjerne kilde skov mark vej kryds omvej labyrint port have tårn kælder loft rum hjørne grænse hjul kugle terning mønt maske kappe krone ring spiral cirkel kvadrat linje prik vind rejse gave offer løgn hemmelighed gæld løfte tvivl tro tilfældighed skæbne vane bryde bøje falde flyve gemme grave huske glemme hviske lede låse mærke nynne omfavne opløse pege rense risikere samle skjule skifte slippe smelte spørge svæve synke tænde tømme vække vende våge åbne lukke ånde danse dryppe fryse bevæge tom fuld blød hård skarp stille høj sprød vild fremmed gammel ny skjult fælles forkert mørk langsom hurtig tung let skør blind døv bar hel brudt tavs varm kold sulten tørstig søvnig vågen skæv rund'.split(' ');
+const iV=ALL.indexOf('bryde'),iA=ALL.indexOf('tom');
+const NOUNS=ALL.slice(0,iV),VERBS=ALL.slice(iV,iA),ADJ=ALL.slice(iA);
 const pk=a=>a[Math.random()*a.length|0];
-let wbag=[];
-function nextWord(){
-  if(!wbag.length){wbag=WORDS.map((_,i)=>i);for(let i=wbag.length-1;i>0;i--){const j=Math.random()*(i+1)|0;const x=wbag[i];wbag[i]=wbag[j];wbag[j]=x}}
-  return WORDS[wbag.pop()];
+const fuge=a=>/[aeiouyæøå]$/.test(a)?'':pk(['','','s','e']);
+const PRE=['u','mis','gen','for','ur','over','under','mod','sam','fra'];
+const SO=['b','d','f','g','h','k','l','m','n','p','r','s','t','v','sk','st','tr','kl','fr','gl','sj','fl'];
+const SV=['a','e','i','o','u','y','æ','ø','å','ej','au','a','e'];
+const SC=['','','','n','r','l','m','s','k','nd','rt','ld','g','st'];
+function inv(){let w='';const k=2+(Math.random()*2|0);for(let i=0;i<k;i++)w+=pk(SO)+pk(SV)+(i<k-1?pk(['','','n','r','l','s']):pk(SC));return w}
+function gen1(){
+  const r=Math.random();
+  if(r<.2)return pk(ALL);
+  if(r<.55){const a=pk(NOUNS);return a+fuge(a)+pk(NOUNS)}
+  if(r<.62){const a=pk(NOUNS),b=pk(NOUNS);return a+fuge(a)+b+fuge(b)+pk(NOUNS)}
+  if(r<.72)return pk(NOUNS)+pk(['løs','agtig','fuld','lig']);
+  if(r<.78)return pk(ADJ)+'hed';
+  if(r<.84)return pk(VERBS).replace(/e$/,'').replace(/(.)\1$/,'$1')+pk(['ing','else','ende']);
+  if(r<.90)return pk(PRE)+pk(NOUNS.concat(ADJ));
+  return inv();
 }
+function gen(){let w;do w=gen1();while(w.length>20);return w}
 const hd=$('#hand');let hbusy=false;
 hd.innerHTML='<svg viewBox="-60 -60 120 120" width="112" height="112" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">'+arrows+'</svg>';
 function nyHandling(){
   if(hbusy)return;hbusy=true;buzz(20);
-  const fin=[nextWord(),nextWord(),nextWord()],cur=[],last=reduce?1:9;let n=0;
+  const fin=[gen(),gen(),gen()],cur=[],last=reduce?1:9;let n=0;
   const iv=setInterval(()=>{
     n++;
-    for(let i=0;i<3;i++)cur[i]=n>=(reduce?1:5+i*2)?fin[i]:pk(WORDS);
+    for(let i=0;i<3;i++)cur[i]=n>=(reduce?1:5+i*2)?fin[i]:gen();
     hd.innerHTML=cur.map(w=>'<span>'+w+'</span>').join('');
     if(n>=last){clearInterval(iv);sfx.tap();buzz([30,40,60]);hbusy=false}else sfx.tick();
   },70);
