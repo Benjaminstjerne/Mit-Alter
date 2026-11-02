@@ -9,117 +9,83 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Kaosalter</title>
 <style>
-:root{
-  --bg:#160c20; --ink:#ece3d0; --dim:#a99bb8; --wax:#b0342f;
-  --h:285; --oct:hsl(var(--h),80%,66%);
-  color-scheme:dark;
-}
+/* Grundlag */
+:root{--bg:#160c20;--ink:#ece3d0;--dim:#a99bb8;--wax:#b0342f;--h:285;--oct:hsl(var(--h),80%,66%);color-scheme:dark}
 *{box-sizing:border-box}
-html{background:var(--bg)}
-body{
-  margin:0; color:var(--ink);
-  font:1.075rem/1.65 "Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-  background:radial-gradient(120% 60% at 50% 18%,#2b1640 0%,var(--bg) 62%) no-repeat,var(--bg);
-  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
-  min-height:100vh;
-}
-main{max-width:34rem;margin:0 auto;padding:1rem 1.25rem 4rem}
-h1{font-weight:400;font-size:clamp(2.6rem,12vw,4.2rem);line-height:1;margin:1.2rem 0 .6rem;letter-spacing:.01em}
-h2{font-weight:400;font-size:1.6rem;margin:4rem 0 .6rem}
-p{margin:0 0 1rem;max-width:32rem}
-.lede,.hint,small{color:var(--dim)}
-.hint{font-size:.95rem;text-align:center;margin-top:.5rem}
+html{background:var(--bg);scroll-snap-type:y mandatory}
+body{margin:0;min-height:100vh;color:var(--ink);font:1.075rem/1.65 "Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;background:radial-gradient(120% 60% at 50% 18%,#2b1640 0%,var(--bg) 62%) no-repeat,var(--bg);padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+section{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem 1.25rem;scroll-snap-align:start;scroll-snap-stop:always}
+canvas:focus-visible,button:focus-visible,input:focus-visible,.deck:focus-visible,#hand:focus-visible{outline:2px solid var(--oct);outline-offset:4px}
 
-#sphere{
-  display:block;width:100%;aspect-ratio:1;margin:.5rem 0 3rem;
-  touch-action:pan-y;cursor:pointer;-webkit-tap-highlight-color:transparent;
-  border-radius:50%;
-}
-canvas:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--oct);outline-offset:4px}
-
-label{display:block;color:var(--dim);font-size:.95rem}
-input{
-  width:100%;margin:.4rem 0 1rem;padding:.6rem 0;
-  background:transparent;color:var(--ink);font:inherit;
-  border:0;border-bottom:1px solid var(--dim);border-radius:0;
-}
-.row{justify-content:center}
-button{display:inline-grid;place-items:center;min-width:48px}
-input.shake{animation:shake .35s}
-@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
-@media (prefers-reduced-motion:reduce){input.shake{animation:none}}
-.row{display:flex;flex-wrap:wrap;gap:.6rem}
-button{
-  min-height:44px;padding:.55rem 1.1rem;font:inherit;color:var(--ink);
-  background:transparent;border:1px solid var(--dim);border-radius:3px;cursor:pointer;
-}
-button.main{background:var(--wax);border-color:var(--wax)}
+/* Knapper og felter */
+button{display:inline-grid;place-items:center;min-width:48px;min-height:44px;padding:.55rem 1.1rem;font:inherit;color:var(--oct);background:transparent;border:1px solid var(--dim);border-radius:3px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button.main{background:var(--wax);border-color:var(--wax);color:var(--ink)}
 button:disabled{opacity:.4;cursor:default}
 button:not(:disabled):active{border-color:var(--oct)}
+input{width:min(100%,24rem);margin:.4rem 0 1rem;padding:.6rem 0;font:inherit;color:var(--oct);caret-color:var(--oct);text-shadow:0 0 8px var(--oct);background:transparent;border:0;border-bottom:1px solid var(--oct);border-radius:0}
+input.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.row{display:flex;flex-wrap:wrap;justify-content:center;gap:.6rem;width:min(100%,24rem)}
 
-#sigil{display:block;width:100%;max-width:22rem;aspect-ratio:1;margin:1.5rem auto 0}
-#sigil.burn{
-  transition:opacity 2.4s ease-in,filter 2.4s ease-in;
-  opacity:0;filter:sepia(1) saturate(5) hue-rotate(-35deg) blur(3px) brightness(1.5);
-}
-#letters{text-align:center;color:var(--dim);letter-spacing:.2em;min-height:1.7em;margin:.5rem 0 1rem}
-
-ol{padding-left:1.3rem;max-width:32rem}
-li{margin-bottom:.8rem}
-footer{margin-top:4rem;text-align:center;color:var(--dim)}
-@media (prefers-reduced-motion:reduce){#sigil.burn{transition-duration:.01s}}
-
-html{scroll-snap-type:y mandatory}
-section{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem 1.25rem;scroll-snap-align:start;scroll-snap-stop:always}
-section>input,section>.row{width:min(100%,24rem)}
-#sphere{width:min(100%,76dvh);margin:0 auto}
-#wrap{position:relative;width:min(100%,22rem,calc((100dvh - 14rem)/1.25));aspect-ratio:1/1.25}
-#sigil{position:absolute;left:0;top:0;width:100%;max-width:none;margin:0}
-#fire{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+/* Navigation og lyd */
 #dots{position:fixed;right:.2rem;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;z-index:5}
 #dots button{width:28px;height:28px;min-width:0;min-height:0;padding:0;border:0;background:radial-gradient(circle,var(--dim) 3px,transparent 4px)}
 #dots button.on{background:radial-gradient(circle,var(--oct) 4px,transparent 5px)}
+#mute{position:fixed;left:.2rem;top:calc(.2rem + env(safe-area-inset-top));z-index:5;border:0;background:none}
+
+/* Kaossfære og kaoskompas */
+#sphere,#kompas{display:block;width:min(100%,76dvh);aspect-ratio:1;margin:0 auto;cursor:pointer;touch-action:pan-y;-webkit-tap-highlight-color:transparent}
+#sphere{border-radius:50%}
+
+/* Sigil og ild */
+#letters{min-height:1.7em;margin:.5rem 0 1rem;text-align:center;letter-spacing:.2em;font-size:1.15rem;color:var(--oct);text-shadow:0 0 8px var(--oct)}
+#wrap{position:relative;width:min(100%,22rem,calc((100dvh - 14rem)/1.25));aspect-ratio:1/1.25}
+#sigil{display:block;position:absolute;left:0;top:0;width:100%;aspect-ratio:1}
+#sigil.burn{transition:opacity 2.4s ease-in,filter 2.4s ease-in;opacity:0;filter:sepia(1) saturate(5) hue-rotate(-35deg) blur(3px) brightness(1.5)}
+#fire{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+
+/* Tarot */
+#picker{display:flex;gap:.6rem;margin-bottom:1rem}
+#picker button.on{border-color:var(--oct)}
+#spread{--cw:min(62vw,15rem,calc(48dvh*.588));display:grid;gap:.5rem;justify-content:center;grid-auto-rows:calc(var(--cw)*1.7)}
+#spread.s1{grid-template-columns:var(--cw)}
+#spread.s3{--cw:min(calc((100vw - 3rem)/3.1),9rem,calc(40dvh*.588));grid-template-columns:repeat(3,var(--cw))}
+#spread.s10{--cw:min(calc((100vw - 3rem)/4.6),6rem,calc((100dvh - 14rem)/7.2));grid-template-columns:repeat(4,var(--cw));gap:.35rem}
+.deck{perspective:1200px;width:var(--cw);height:calc(var(--cw)*1.7);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.deck.x{transform:rotate(90deg);z-index:2}
 .card{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.3,.7,.2,1)}
 .card.flip{transform:rotateY(180deg)}
 .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .front{transform:rotateY(180deg)}
 .face svg{width:100%;height:100%;display:block;filter:drop-shadow(0 6px 18px rgba(0,0,0,.6))}
-@media (prefers-reduced-motion:reduce){.card{transition:none}}
-input,#letters,#note,button{color:var(--oct)}
-button.main{color:var(--ink)}
-input{caret-color:var(--oct);border-bottom-color:var(--oct);text-shadow:0 0 8px var(--oct)}
-#letters{text-shadow:0 0 8px var(--oct);font-size:1.15rem}
 .face text{fill:var(--oct)}
-#note{width:min(100%,22rem);min-height:5.5rem;margin-top:1.25rem;text-align:center;text-shadow:0 0 8px var(--oct)}
-.deck{perspective:1200px;width:var(--cw);height:calc(var(--cw)*1.7);cursor:pointer;-webkit-tap-highlight-color:transparent}
-.deck.x{transform:rotate(90deg);z-index:2}
-#spread{--cw:min(62vw,15rem,calc(48dvh*.588));display:grid;gap:.5rem;justify-content:center;grid-auto-rows:calc(var(--cw)*1.7)}
-#spread.s1{grid-template-columns:var(--cw)}
-#spread.s3{--cw:min(calc((100vw - 3rem)/3.1),9rem,calc(40dvh*.588));grid-template-columns:repeat(3,var(--cw))}
-#spread.s10{--cw:min(calc((100vw - 3rem)/4.6),6rem,calc((100dvh - 14rem)/7.2));grid-template-columns:repeat(4,var(--cw));gap:.35rem}
-#picker{display:flex;gap:.6rem;margin-bottom:1rem}
-#picker button.on{border-color:var(--oct)}
-#note{min-height:6.5rem;font-size:.95rem;line-height:1.5}
-#mute{position:fixed;left:.2rem;top:calc(.2rem + env(safe-area-inset-top));z-index:5;border:0;background:none}
+#note{width:min(100%,22rem);min-height:6.5rem;margin-top:1.25rem;text-align:center;font-size:.95rem;line-height:1.5;color:var(--oct);text-shadow:0 0 8px var(--oct)}
+
+/* Terninger */
 .dice{display:flex;gap:1.5rem}
-.die{width:min(34vw,9rem);aspect-ratio:1;padding:0;border:0;background:none;min-height:0;-webkit-tap-highlight-color:transparent}
+.die{width:min(34vw,9rem);aspect-ratio:1;min-height:0;padding:0;border:0;background:none}
 .die svg{width:100%;height:100%;display:block;overflow:visible;filter:drop-shadow(0 0 10px var(--oct))}
 .die rect{fill:none;stroke:var(--oct);stroke-width:3}
 .die circle{fill:var(--oct)}
 .die.roll{animation:tumble .45s linear infinite}
+.die.land svg{animation:land .8s ease-out}
 @keyframes tumble{0%{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.12)}100%{transform:rotate(360deg) scale(1)}}
-@media (prefers-reduced-motion:reduce){.die.roll{animation:none}}
-#kompas{display:block;width:min(100%,76dvh);aspect-ratio:1;margin:0 auto;cursor:pointer;touch-action:pan-y;-webkit-tap-highlight-color:transparent}
-#hand{width:min(100%,26rem);min-height:60dvh;display:flex;align-items:center;justify-content:center;text-align:center;font-size:1.55rem;line-height:1.4;color:var(--oct);text-shadow:0 0 10px var(--oct);cursor:pointer;-webkit-tap-highlight-color:transparent}
-#hand{flex-direction:column;gap:.6rem;font-size:2.2rem}
-#hand span{display:block}
-#hand{position:relative;z-index:1;font-size:clamp(1.6rem,7.5vw,2.2rem)}
-#hand span{max-width:100%;overflow-wrap:anywhere}
+@keyframes land{from{filter:drop-shadow(0 0 32px var(--oct)) brightness(2)}}
+
+/* Tre ord */
+#hand{width:min(100%,26rem);min-height:60dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;text-align:center;font-size:clamp(1.6rem,7.5vw,2.2rem);line-height:1.4;color:var(--oct);text-shadow:0 0 10px var(--oct);cursor:pointer;-webkit-tap-highlight-color:transparent}
+#hand span{display:block;max-width:100%;overflow-wrap:anywhere}
+
+@media (prefers-reduced-motion:reduce){
+  input.shake,.die.roll,.die.land svg{animation:none}
+  #sigil.burn{transition-duration:.01s}
+  .card{transition:none}
+}
 </style>
 </head>
 <body>
 <button id="mute" aria-label="Lyd"></button>
-<nav id="dots"><button aria-label="Kaoskompas"></button><button aria-label="Sigil"></button><button aria-label="Tarot"></button><button aria-label="Terninger"></button><button aria-label="Kompas"></button><button aria-label="Ord"></button></nav>
+<nav id="dots"><button aria-label="Kaossfære"></button><button aria-label="Sigil"></button><button aria-label="Tarot"></button><button aria-label="Terninger"></button><button aria-label="Kaoskompas"></button><button aria-label="Ord"></button></nav>
 <section>
   <canvas id="sphere" tabindex="0" role="button" aria-label="Kaossfære"></canvas>
 </section>
@@ -153,6 +119,9 @@ input{caret-color:var(--oct);border-bottom-color:var(--oct);text-shadow:0 0 8px 
 </section>
 
 <script>
+/* Kaosalter. Sider: kaossfære, sigil, tarot, terninger, kaoskompas, tre ord.
+   Rækkefølge i filen: tilstand, kaossfære, sigil, ild, fuldskærm og sider, tarot,
+   haptik, lyd, terninger (med gemt tilstand), kaoskompas, tre ord, start. */
 (()=>{
 const $=s=>document.querySelector(s);
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -160,7 +129,8 @@ const root=document.documentElement;
 
 /* ---------- Kaossfære ---------- */
 const cv=$('#sphere'),cx=cv.getContext('2d');
-let W=0,last=0;
+let W=0,last=0,secIdx=0,sf=0,dc=0;
+let charge=0,mood=null,mt=0,droneLp=null,wish='';   /* ladning, stemning fra kort, sidste sigils bogstaver */
 let rot=0,base=reduce?0:.25,vel=base,pulse=0,hue=285,hueT=285;
 const ripples=[];
 let arrowN=8,trailA=.24,drift=10,fireOff=0,pitchMul=1;
@@ -189,11 +159,12 @@ function draw(t){
   }
 
   cx.save();cx.translate(c,c);cx.rotate(rot);
-  for(let i=0;i<arrowN;i++){const L=R*(.8+.05*Math.sin(t*1.6+i*.9)+pulse*.14*Math.sin(i*2.4+t*9));
+  for(let i=0;i<arrowN;i++){
+    const L=R*(.8+.05*Math.sin(t*1.6+i*.9)+pulse*.14*Math.sin(i*2.4+t*9));
     const hd=R*.18,w=R*.08;
     const col='hsl('+((hue+i*9)%360)+',85%,'+(62+pulse*12)+'%)';
     cx.save();cx.rotate(i*Math.PI*2/arrowN);
-    cx.strokeStyle=col;cx.fillStyle=col;cx.shadowColor=col;cx.shadowBlur=10+pulse*20;
+    cx.strokeStyle=col;cx.fillStyle=col;cx.shadowColor=col;cx.shadowBlur=10+pulse*20+charge*14;
     cx.lineWidth=R*.032;cx.lineCap='round';
     cx.beginPath();cx.moveTo(R*.08,0);cx.lineTo(L-hd,0);cx.stroke();
     cx.beginPath();cx.moveTo(L,0);cx.lineTo(L-hd,-w);cx.lineTo(L-hd*.78,0);cx.lineTo(L-hd,w);cx.closePath();cx.fill();
@@ -208,16 +179,25 @@ function frame(ts){
   const dt=Math.min((ts-last)/1000||.016,.05);last=ts;
   vel+=(base-vel)*(1-Math.exp(-dt*.9));
   rot+=vel*dt;
-  pulse*=Math.exp(-dt*2.2);hueT+=dt*drift;
+  pulse*=Math.exp(-dt*2.2);
+  charge*=Math.exp(-dt*.06);
+  if(mood===null)hueT+=dt*drift;
+  else{mt+=dt*(.25+drift*.01);hueT=mood+45*Math.sin(mt)}
+  if(droneLp&&++dc%12===0)droneLp.frequency.setTargetAtTime(320+charge*600,ac.currentTime,.3);
   hue+=(hueT-hue)*(1-Math.exp(-dt*3));
-  root.style.setProperty('--h',(hue%360).toFixed(1));if(cur&&++sf%3===0)drawSigil();draw(ts/1000);fireStep(dt,ts);if(secIdx===4)kdraw(dt,ts);
+  root.style.setProperty('--h',(hue%360).toFixed(1));
+  if(cur&&++sf%3===0)drawSigil();
+  draw(ts/1000);
+  fireStep(dt,ts);
+  if(secIdx===4)kdraw(dt,ts);
   requestAnimationFrame(frame);
 }
 
 function burst(){
   if(!reduce)vel+=(Math.random()<.5?-1:1)*(9+Math.random()*5);
   pulse=1;
-  hueT+=60+Math.random()*120;
+  if(mood===null)hueT+=60+Math.random()*120;else mt+=1.5+Math.random()*2;
+  charge=Math.min(1,charge+.22);
   root.style.setProperty('--h',Math.round(hueT%360));
   ripples.push(performance.now()/1000);sfx.tap();
   buzz(15);
@@ -232,7 +212,7 @@ cv.addEventListener('pointermove',e=>{
   if(!down)return;
   const dx=e.clientX-down.lx;down.lx=e.clientX;
   if(Math.abs(e.clientX-down.x)>8)down.moved=true;
-  if(down.moved&&!reduce){rot+=dx/W*5;vel+=dx*.05}
+  if(down.moved&&!reduce){rot+=dx/W*5;vel+=dx*.05;charge=Math.min(1,charge+Math.abs(dx)/W*.2)}
 });
 cv.addEventListener('pointerup',()=>{if(down&&!down.moved)burst();down=null});
 cv.addEventListener('pointercancel',()=>{down=null});
@@ -275,6 +255,7 @@ $('#make').addEventListener('click',()=>{
     if(AB.includes(ch)&&!VOW.includes(ch)&&!seen.includes(ch))seen+=ch;
   }
   cur=seen.length>=2?seen:'';
+  if(cur)wish=cur;
   $('#letters').textContent=cur;
   if(!cur){const i=$('#intent');i.classList.remove('shake');void i.offsetWidth;i.classList.add('shake')}
   $('#save').disabled=$('#burn').disabled=!cur;
@@ -318,10 +299,10 @@ function spawn(x,y,v,l,sz){parts.push({x:x,y:y,vx:(Math.random()-.5)*FW*.1,vy:-v
 function fireStep(dt,now){
   if(!FW)return;
   fx.globalCompositeOperation='source-over';fx.clearRect(0,0,FW,FH);
-  const burning=now<burnUntil,n=reduce?2:(burning?10:3);
+  const burning=now<burnUntil,n=reduce?2:(burning?10:3+Math.round(charge*8));
   for(let i=0;i<n;i++){
     if(burning&&burnPts.length&&Math.random()<.85){const b=burnPts[Math.random()*burnPts.length|0];spawn(b[0],b[1],FW*.25,.9,FW*.05)}
-    else spawn(FW/2+(Math.random()-.5)*FW*.16,FH*.97,FW*.28,1.1,FW*.04);
+    else spawn(FW/2+(Math.random()-.5)*FW*(.16+charge*.12),FH*.97,FW*.28*(1+charge*.7),1.1+charge*.4,FW*.04*(1+charge*.8));
   }
   fx.globalCompositeOperation='lighter';
   for(let i=parts.length-1;i>=0;i--){
@@ -392,6 +373,8 @@ const cname=id=>id<22?MJ[id]:RK[(id-22)%14]+' of '+SU[(id-22)/14|0];
 const LAY={1:[[1,1]],3:[[1,1],[2,1],[3,1]],10:[[2,2],[2,2,1],[2,3],[1,2],[2,1],[3,2],[4,4],[4,3],[4,2],[4,1]]};
 let deck=[],spread=1;
 function shuffle(){deck=[...Array(78).keys()];for(let i=77;i>0;i--){const j=Math.random()*(i+1)|0;const t=deck[i];deck[i]=deck[j];deck[j]=t}}
+function moodOf(id){return id<22?id*37%360:[25,200,265,140][(id-22)/14|0]}
+function setMood(id){mood=hue+(((moodOf(id)-hue)%360)+540)%360-180;mt=0;saveState()}
 function say(d){const id=+d.dataset.id;$('#note').textContent=cname(id)+' — '+desc(id)+(d.dataset.rev?' Omvendt: energien er blokeret, vendt indad eller forsinket.':'')}
 function pick(d){
   const card=d.firstChild,fr=card.lastChild,flipped=card.classList.contains('flip');
@@ -403,7 +386,7 @@ function pick(d){
   $('#note').textContent='';card.classList.remove('flip');
   setTimeout(()=>{
     fr.innerHTML=face(id);fr.firstChild.style.transform=rev?'rotate(180deg)':'';
-    d.dataset.id=id;d.dataset.rev=rev?'1':'';card.classList.add('flip');
+    d.dataset.id=id;d.dataset.rev=rev?'1':'';card.classList.add('flip');setMood(id);
     sfx.flip();buzz(15);
     say(d);setTimeout(()=>{d.busy=false},reduce?0:700);
   },wait);
@@ -425,10 +408,9 @@ function build(n){
 document.querySelectorAll('#picker button').forEach(b=>b.addEventListener('click',()=>build(+b.dataset.n)));
 build(1);
 
-const MD=['Nyt begyndelse, tillid og spring ud i det ukendte.','Vilje, evne og midlerne til at skabe det, du vil.','Intuition, hemmeligheder og indre viden.','Overflod, skabelse og omsorg.','Struktur, autoritet og stabilitet.','Tradition, tro og faste rammer.','Et valg, en forening og værdier i tråd.','Viljestyrke og sejr gennem kontrol.','Blid styrke, mod og selvbeherskelse.','Tilbagetrækning, søgen og indre lys.','Cyklusser, skæbne og et vendepunkt.','Sandhed, balance og konsekvens.','Overgivelse, pause og nyt perspektiv.','Afslutning, forvandling og slip.','Balance, tålmodighed og blanding.','Binding, afhængighed og skyggesiden.','Pludseligt sammenbrud og befrielse.','Håb, fornyelse og ro.','Illusion, drømme og det ubevidste.','Glæde, klarhed og livskraft.','Et kald, et opgør og genfødsel.','Fuldendelse, helhed og integration.'];
-const RM=['Et nyt frø','Valg og balance','Vækst og samarbejde','Stabilitet og hvile','Konflikt og tab','Hjælp og overgang','Prøve og vurdering','Bevægelse og flid','Næsten i mål','Fuldendelse og byrde','Nysgerrighed og nyt budskab','Jagt og drivkraft','Moden modtagelighed','Herredømme og ansvar'];
-const DM=['viljen og handlingen','følelserne og relationerne','tanken og konflikten','kroppen, arbejdet og pengene'];
-const desc=id=>id<22?MD[id]:RM[(id-22)%14]+' i '+DM[(id-22)/14|0]+'.';
+const MD=['Ny begyndelse, tillid og spring ud i det ukendte.','Vilje, evne og midlerne til at skabe det, du vil.','Intuition, hemmeligheder og indre viden.','Overflod, skabelse og omsorg.','Struktur, autoritet og stabilitet.','Tradition, tro og faste rammer.','Et valg, en forening og værdier i tråd.','Viljestyrke og sejr gennem kontrol.','Blid styrke, mod og selvbeherskelse.','Tilbagetrækning, søgen og indre lys.','Cyklusser, skæbne og et vendepunkt.','Sandhed, balance og konsekvens.','Overgivelse, pause og nyt perspektiv.','Afslutning, forvandling og slip.','Balance, tålmodighed og blanding.','Binding, afhængighed og skyggesiden.','Pludseligt sammenbrud og befrielse.','Håb, fornyelse og ro.','Illusion, drømme og det ubevidste.','Glæde, klarhed og livskraft.','Et kald, et opgør og genfødsel.','Fuldendelse, helhed og integration.'];
+const MN=['Et gnistrende frø af vilje og skaberkraft; en ny drivkraft.','Verden i hånden, og du vælger, hvilken retning din vilje skal tage.','Dine planer sejler ud; ventetid, udsyn og udvidelse.','Fest og fast grund; et sted, hvor du hører til.','Rivalisering og livlig strid; alle vil noget forskelligt.','Sejr og anerkendelse efter lang indsats.','Du forsvarer din position mod modstand.','Hurtig bevægelse; alt falder pludselig på plads.','Udmattet, men stadig stående; hold ud den sidste stump.','En byrde af ansvar; du bærer for meget alene.','En nysgerrig ildsjæl med et nyt budskab og lyst til at prøve.','Dristig fart og jagt; handling før eftertanke.','Varm, modig udstråling og selvsikker kreativitet.','En visionær leder, der handler med vilje og overblik.','En åbnet følelse; kærlighed, medfølelse eller en indre kilde.','Gensidig forbindelse; to kræfter mødes i balance.','Fællesskab, fest og venskab.','Apati og indadvendthed; du overser et tilbud lige foran dig.','Sorg over det tabte, mens noget stadig står tilbage.','Nostalgi, barndom og enkle gaver.','Mange drømme og illusioner; svært at vælge det virkelige.','Du forlader noget, der ikke længere nærer dig.','Tilfredshed; et ønske, der går i opfyldelse.','Følelsesmæssig fuldendelse og harmoni i hjemmet.','Et blidt, drømmende budskab og åbenhed for følelser.','En romantiker, der byder frem med charme og tilbud.','Dyb empati og intuition; du rummer andres følelser.','Følelsesmæssig modenhed; ro midt i bølgerne.','Klarhed og gennembrud; sandheden skærer igennem.','Fastlåst valg; du lukker øjnene for en beslutning.','Hjertesorg; en smertefuld, men sand erkendelse.','Hvile og tilbagetrækning efter strid.','En hul sejr; konflikt, hvor alle mister noget.','Overgang mod roligere vande; det værste ligger bag dig.','List og undvigelse; noget sker i det skjulte.','Du føler dig fanget, men båndene er løsere, end de ser ud.','Nattens bekymringer; tanker, der vokser i mørket.','Et smertefuldt endepunkt; det værste er nu overstået.','Skarp nysgerrighed; spørgsmål, observation og nye ideer.','Hurtig og kompromisløs tankekraft; angreb i fuld fart.','Klar, ærlig dømmekraft; du ser sagen uden pynt.','Intellektuel autoritet; strenge principper og retfærdig dom.','Et konkret frø af muligheder; en materiel begyndelse.','Mange bolde i luften; fleksibel balance.','Samarbejde og håndværk; dygtighed bliver set.','At klamre sig til tryghed; kontrol over det, du ejer.','Mangel og udstødelse; hjælp findes tæt på, men er svær at se.','At give og modtage; rimelig fordeling af ressourcer.','Tålmodig vurdering; vent på høsten.','Flid og øvelse; du mestrer et håndværk gennem gentagelse.','Selvstændig overflod og nydelse af det, du har skabt.','Arv, familie og varig rigdom på tværs af generationer.','Jordnær nysgerrighed; en ny færdighed eller et studie.','Stabil, ihærdig fremdrift; langsomt, men sikkert.','Omsorgsfuld, praktisk overflod; hjem og krop nærer dig.','Sikker velstand og pålidelighed; du bygger noget, der holder.'];
+const desc=id=>id<22?MD[id]:MN[id-22];
 /* ---------- Haptik ---------- */
 let sw;
 function buzz(p){
@@ -447,14 +429,14 @@ const burnPat=()=>{const a=[];for(let i=0;i<14;i++)a.push(15+Math.random()*30|0,
 const DICEPAT=[];for(let i=0;i<9;i++)DICEPAT.push(20,45);DICEPAT.push(150);
 
 /* ---------- Lyd ---------- */
-let ac,master,noiseB,muted=false,secIdx=0;const drn=[];
+let ac,master,noiseB,muted=false;const drn=[];
 function audio(){
   if(!ac){
     try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){return}
     master=ac.createGain();master.gain.value=muted?0:.6;master.connect(ac.destination);
     noiseB=ac.createBuffer(1,ac.sampleRate,ac.sampleRate);
     const d=noiseB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
-    const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=320;
+    const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=320;droneLp=lp;
     const g=ac.createGain();g.gain.value=.16;lp.connect(g);g.connect(master);
     [55,55.35,82.4].forEach(f=>{const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=f*pitchMul;o.connect(lp);o.start();drn.push([o,f])});
     const l=ac.createOscillator(),lg=ac.createGain();l.frequency.value=.06;lg.gain.value=120;l.connect(lg);lg.connect(lp.frequency);l.start();
@@ -497,6 +479,22 @@ const PIP={1:[[50,50]],2:[[28,28],[72,72]],3:[[28,28],[50,50],[72,72]],4:[[28,28
 const dieSvg=n=>'<svg viewBox="0 0 100 100"><rect x="4" y="4" width="92" height="92" rx="16"/>'+PIP[n].map(p=>'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="7.5"/>').join('')+'</svg>';
 const dies=[...document.querySelectorAll('.die')];
 let rolling=false;
+const KEY='kaosalter.v1';
+const clampN=(v,lo,hi,d)=>typeof v==='number'&&v>=lo&&v<=hi?v:d;
+function saveState(){
+  try{localStorage.setItem(KEY,JSON.stringify({arrowN:arrowN,trailA:trailA,drift:drift,fireOff:fireOff,pitchMul:pitchMul,base:reduce?undefined:base,mood:mood===null?undefined:((mood%360)+360)%360}))}catch(e){}
+}
+function loadState(){
+  try{
+    const o=JSON.parse(localStorage.getItem(KEY)||'{}');
+    arrowN=clampN(o.arrowN,3,12,arrowN);trailA=clampN(o.trailA,.02,1,trailA);drift=clampN(o.drift,0,200,drift);
+    fireOff=clampN(o.fireOff,-60,360,fireOff);pitchMul=clampN(o.pitchMul,.4,2.5,pitchMul);
+    if(!reduce){base=clampN(o.base,-2,2,base);vel=base}
+    mood=clampN(o.mood,0,360,null);if(mood!==null)hue=hueT=mood;
+  }catch(e){}
+}
+loadState();
+
 function effect(a,b){
   const i=b-1;
   if(a===1){if(!reduce){base=[-1.6,-.6,-.1,.1,.6,1.6][i];vel+=base*3}}
@@ -506,6 +504,7 @@ function effect(a,b){
   else if(a===5)fireOff=[0,170,100,230,290,-40][i];
   else{pitchMul=[.5,.75,1,1.25,1.5,2][i];if(ac)drn.forEach(d=>d[0].frequency.setTargetAtTime(d[1]*pitchMul,ac.currentTime,.6))}
   pulse=1;ripples.push(performance.now()/1000);
+  saveState();
 }
 function roll(){
   if(rolling)return;rolling=true;sfx.dice();buzz(DICEPAT);
@@ -518,7 +517,9 @@ function roll(){
       const a=1+Math.random()*6|0,b=1+Math.random()*6|0;
       dies[0].innerHTML=dieSvg(a);dies[1].innerHTML=dieSvg(b);
       dies.forEach(e=>e.classList.remove('roll'));
-      effect(a,b);rolling=false;
+      effect(a,b);
+      dies.forEach(e=>{e.classList.remove('land');void e.offsetWidth;e.classList.add('land')});
+      rolling=false;
     }
   },90);
 }
@@ -528,19 +529,19 @@ const kc=$('#kompas'),kx=kc.getContext('2d');
 let KW=0,ka=0,kw=0,kt=0,kk=30,kcc=4,kmode='still',kuntil=0,kj=0,ks=0;
 const wr=d=>((d+Math.PI)%6.2832+6.2832)%6.2832-Math.PI;
 function kpick(now){
-  kmode=['seek','seek','jitter','spin','still','still','jump','drift'][Math.random()*8|0];
-  kuntil=now+1500+Math.random()*3500;
+  kmode=Math.random()<charge?pk(['jitter','spin','jump','seek']):['seek','seek','jitter','spin','still','still','jump','drift'][Math.random()*8|0];
+  kuntil=now+(1500+Math.random()*3500)*(1-charge*.6);
   if(kmode==='seek'){kt=Math.random()*6.2832;kk=10+Math.random()*50;kcc=1.5+Math.random()*5}
   else if(kmode==='spin')kw=(Math.random()<.5?-1:1)*(8+Math.random()*12);
   else if(kmode==='jitter')kt=ka;
-  else if(kmode==='still'){kw=0;ks=ka;kuntil=now+5000+Math.random()*5000}
+  else if(kmode==='still'){kw=0;ks=ka;kuntil=now+(5000+Math.random()*5000)*(1-charge*.5)}
   else if(kmode==='drift')kt=ka;
 }
 function kdraw(dt,now){
   if(!KW)return;
   if(now>kuntil)kpick(now);
   if(kmode==='seek')kw+=(kk*wr(kt-ka)-kcc*kw)*dt;
-  else if(kmode==='jitter')kw+=((Math.random()-.5)*400+30*wr(kt-ka)-5*kw)*dt;
+  else if(kmode==='jitter')kw+=((Math.random()-.5)*400*(1+charge*2)+30*wr(kt-ka)-5*kw)*dt;
   else if(kmode==='spin')kw*=Math.exp(-dt*.4);
   else if(kmode==='drift'){kt+=(Math.random()-.5)*dt*4;kw+=(3*wr(kt-ka)-3*kw)*dt}
   else if(kmode==='jump'){kw=0;if(now>kj){ka=Math.random()*6.2832;kj=now+180+Math.random()*500;sfx.tick();buzz(8)}}
@@ -576,31 +577,44 @@ const SC=['','','','n','r','l','m','s','k','nd','rt','ld','g','st'];
 function inv(){let w='';const k=2+(Math.random()*2|0);for(let i=0;i<k;i++)w+=pk(SO)+pk(SV)+(i<k-1?pk(['','','n','r','l','s']):pk(SC));return w}
 function gen1(){
   const r=Math.random();
-  if(r<.2)return pk(ALL);
-  if(r<.55){const a=pk(NOUNS);return a+fuge(a)+pk(NOUNS)}
-  if(r<.62){const a=pk(NOUNS),b=pk(NOUNS);return a+fuge(a)+b+fuge(b)+pk(NOUNS)}
-  if(r<.72)return pk(NOUNS)+pk(['løs','agtig','fuld','lig']);
-  if(r<.78)return pk(ADJ)+'hed';
-  if(r<.84)return pk(VERBS).replace(/e$/,'').replace(/(.)\1$/,'$1')+pk(['ing','else','ende']);
-  if(r<.90)return pk(PRE)+pk(NOUNS.concat(ADJ));
+  if(r<.18)return pk(ALL);
+  if(r<.58){const a=pk(NOUNS);return a+fuge(a)+pk(NOUNS)}
+  if(r<.66){const a=pk(NOUNS),b=pk(NOUNS);return a+fuge(a)+b+fuge(b)+pk(NOUNS)}
+  if(r<.76)return pk(NOUNS)+pk(['løs','agtig','fuld','lig']);
+  if(r<.82)return pk(ADJ)+'hed';
+  if(r<.88)return pk(VERBS).replace(/e$/,'').replace(/(.)\1$/,'$1')+pk(['ing','else','ende']);
+  if(r<.96)return pk(PRE)+pk(NOUNS.concat(ADJ));
   return inv();
 }
-function gen(){let w;do w=gen1();while(w.length>20);return w}
+function gen(){
+  if(wish&&Math.random()<.6){
+    let best='',bs=-1;
+    for(let i=0;i<14;i++){
+      const c=gen1();if(c.length>20)continue;
+      const u=c.toUpperCase();let sc=0;
+      for(const ch of wish)if(u.includes(ch))sc++;
+      if(sc>bs){bs=sc;best=c}
+    }
+    if(best)return best;
+  }
+  let w;do w=gen1();while(w.length>20);
+  return w;
+}
 const hd=$('#hand');let hbusy=false;
 hd.innerHTML='<svg viewBox="-60 -60 120 120" width="112" height="112" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">'+arrows+'</svg>';
 function nyHandling(){
   if(hbusy)return;hbusy=true;buzz(20);
-  const fin=[gen(),gen(),gen()],cur=[],last=reduce?1:9;let n=0;
+  const fin=[gen(),gen(),gen()],shown=[],ticks=reduce?1:9+Math.round(charge*5);
+  let n=0;
   const iv=setInterval(()=>{
     n++;
-    for(let i=0;i<3;i++)cur[i]=n>=(reduce?1:5+i*2)?fin[i]:gen();
-    hd.innerHTML=cur.map(w=>'<span>'+w+'</span>').join('');
-    if(n>=last){clearInterval(iv);sfx.tap();buzz([30,40,60]);hbusy=false}else sfx.tick();
-  },70);
+    for(let i=0;i<3;i++)shown[i]=n>=(reduce?1:ticks-4+i*2)?fin[i]:gen();
+    hd.innerHTML=shown.map(w=>'<span>'+w+'</span>').join('');
+    if(n>=ticks){clearInterval(iv);sfx.tap();buzz([30,40,60]);hbusy=false}else sfx.tick();
+  },reduce?70:70-charge*35);
 }
 hd.addEventListener('click',nyHandling);
 hd.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();nyHandling()}});
-let sf=0;
 /* ---------- Start ---------- */
 function layout(){W=fit(cv,cx);S=fit(sg,sx);fitFire();KW=fit(kc,kx);drawSigil()}
 addEventListener('resize',layout);
