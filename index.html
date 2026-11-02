@@ -21,9 +21,10 @@ canvas:focus-visible,button:focus-visible,input:focus-visible,.deck:focus-visibl
 button{display:inline-grid;place-items:center;min-width:48px;min-height:44px;padding:.55rem 1.1rem;font:inherit;color:var(--oct);background:transparent;border:1px solid var(--dim);border-radius:3px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 button.main{background:var(--wax);border-color:var(--wax);color:var(--ink)}
 button:disabled{opacity:.4;cursor:default}
+button:not(.die) svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}   /* alle ikoner */
 button:not(:disabled):active{border-color:var(--oct)}
 input{width:min(100%,24rem);margin:.4rem 0 1rem;padding:.6rem 0;font:inherit;color:var(--oct);caret-color:var(--oct);text-shadow:0 0 8px var(--oct);background:transparent;border:0;border-bottom:1px solid var(--oct);border-radius:0}
-input.shake{animation:shake .35s}
+input.shake,#mic.shake{animation:shake .35s}
 @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 .row{display:flex;flex-wrap:wrap;justify-content:center;gap:.6rem;width:min(100%,24rem)}
 
@@ -31,7 +32,10 @@ input.shake{animation:shake .35s}
 #dots{position:fixed;right:.2rem;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;z-index:5}
 #dots button{width:28px;height:28px;min-width:0;min-height:0;padding:0;border:0;background:radial-gradient(circle,var(--dim) 3px,transparent 4px)}
 #dots button.on{background:radial-gradient(circle,var(--oct) 4px,transparent 5px)}
-#mute{position:fixed;left:.2rem;top:calc(.2rem + env(safe-area-inset-top));z-index:5;border:0;background:none}
+#mute,#mic{position:fixed;top:calc(.2rem + env(safe-area-inset-top));z-index:5;border:0;background:none}
+#mute{left:.2rem}
+#mic{left:4.2rem;color:var(--dim)}
+#mic.live{color:var(--oct);filter:drop-shadow(0 0 8px var(--oct))}
 
 /* Kaossfære og kaoskompas */
 #sphere,#kompas{display:block;width:min(100%,76dvh);aspect-ratio:1;margin:0 auto;cursor:pointer;touch-action:pan-y;-webkit-tap-highlight-color:transparent}
@@ -84,7 +88,7 @@ button.cold:not(:disabled){opacity:.55}
 #burn:not(.cold):not(:disabled){border-color:var(--oct);box-shadow:0 0 14px var(--oct)}
 
 @media (prefers-reduced-motion:reduce){
-  input.shake,.die.roll,.die.land svg{animation:none}
+  input.shake,#mic.shake,.die.roll,.die.land svg{animation:none}
   #sigil.burn{transition-duration:.01s}
   .card{transition:none}
 }
@@ -102,9 +106,6 @@ button.cold:not(:disabled){opacity:.55}
 #posinfo li span strong{font-weight:400;letter-spacing:.06em;text-transform:uppercase;font-size:.85rem;display:block}
 .pos{position:absolute;left:0;right:0;bottom:7%;text-align:center;font-style:normal;font-size:clamp(.7rem,2.6vw,.95rem);color:var(--oct);opacity:.8;text-shadow:0 0 6px var(--oct)}
 @media (prefers-reduced-motion:reduce){#posinfo{transition:none}}
-#mic{position:fixed;left:4.2rem;top:calc(.2rem + env(safe-area-inset-top));z-index:5;border:0;background:none;color:var(--dim)}
-#mic.live{color:var(--oct);filter:drop-shadow(0 0 8px var(--oct))}
-#mic.shake{animation:shake .35s}
 </style>
 </head>
 <body>
@@ -117,17 +118,17 @@ button.cold:not(:disabled){opacity:.55}
 <section>
   <input id="intent" type="text" maxlength="120" autocomplete="off" aria-label="Dit ønske">
   <div class="row">
-    <button id="make" class="main" aria-label="Lav sigil" title="Lav sigil"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/></svg></button>
-    <button id="save" disabled aria-label="Gem billede" title="Gem billede"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg></button>
-    <button id="burn" disabled aria-label="Brænd" title="Brænd"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z"/></svg></button>
+    <button id="make" class="main" aria-label="Lav sigil" title="Lav sigil"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/></svg></button>
+    <button id="save" disabled aria-label="Gem billede" title="Gem billede"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg></button>
+    <button id="burn" disabled aria-label="Brænd" title="Brænd"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z"/></svg></button>
   </div>
     <div id="wrap"><canvas id="sigil" aria-label="Din sigil"></canvas><canvas id="fire"></canvas></div>
 </section>
 <section id="tarot">
   <div id="picker">
-    <button data-n="1" class="on" aria-label="Ét kort"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg></button>
-    <button data-n="3" aria-label="Tre kort"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="2" y="6" width="6" height="12" rx="1"/><rect x="9" y="6" width="6" height="12" rx="1"/><rect x="16" y="6" width="6" height="12" rx="1"/></svg></button>
-    <button data-n="10" aria-label="Keltisk kors"><svg viewBox="0 0 28 24" width="28" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="8" y="9" width="5" height="6"/><rect x="8" y="2" width="5" height="5"/><rect x="8" y="17" width="5" height="5"/><rect x="1" y="9" width="5" height="6"/><rect x="15" y="9" width="5" height="6"/><rect x="23" y="2" width="4" height="4"/><rect x="23" y="7" width="4" height="4"/><rect x="23" y="12" width="4" height="4"/><rect x="23" y="17" width="4" height="4"/></svg></button>
+    <button data-n="1" class="on" aria-label="Ét kort"><svg viewBox="0 0 24 24" width="24" height="24"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg></button>
+    <button data-n="3" aria-label="Tre kort"><svg viewBox="0 0 24 24" width="24" height="24"><rect x="2" y="6" width="6" height="12" rx="1"/><rect x="9" y="6" width="6" height="12" rx="1"/><rect x="16" y="6" width="6" height="12" rx="1"/></svg></button>
+    <button data-n="10" aria-label="Keltisk kors"><svg viewBox="0 0 28 24" width="28" height="24"><rect x="8" y="9" width="5" height="6"/><rect x="8" y="2" width="5" height="5"/><rect x="8" y="17" width="5" height="5"/><rect x="1" y="9" width="5" height="6"/><rect x="15" y="9" width="5" height="6"/><rect x="23" y="2" width="4" height="4"/><rect x="23" y="7" width="4" height="4"/><rect x="23" y="12" width="4" height="4"/><rect x="23" y="17" width="4" height="4"/></svg></button>
   </div>
   <div id="spread"></div>
   <div id="note" aria-live="polite"></div>
@@ -145,17 +146,38 @@ button.cold:not(:disabled){opacity:.55}
 <section id="skifer"><canvas id="slab" aria-label="Skifer"></canvas></section>
 
 <script>
-/* Kaosalter. Sider: kaossfære, sigil, tarot, terninger, kaoskompas, tre ord.
-   Rækkefølge i filen: tilstand, kaossfære, sigil, ild, fuldskærm og sider, tarot,
-   haptik, lyd, terninger (med gemt tilstand), kaoskompas, tre ord, start. */
+/* Kaosalter: ét alter til telefonen, syv sider der ruller lodret.
+   Sider: kaossfære, sigil, tarot, terninger, kaoskompas, tre ord, skifer.
+   Delt tilstand: ladning (fra tryk og stemme), stemning (sidste kort), terningernes ændringer
+   (gemmes i localStorage) og sidste sigils bogstaver (farver ordene).
+   Rækkefølge: indstillinger, kaossfære, sigil, ild, fuldskærm og sider, tarot, haptik, lyd,
+   stemme, terninger, kaoskompas, tre ord, skifer, start. */
 (()=>{
 const $=s=>document.querySelector(s);
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const root=document.documentElement;
 
+/* ---------- Indstillinger: de tal, du mest sandsynligt vil skrue på ---------- */
+const TUNE={
+  chargeDecay:.06,     /* ladningens henfald pr. sekund (halveres på ca. 12 s) */
+  burnAt:.55,          /* ladning, der kræves for at brænde en sigil */
+  breath:10,           /* sekunder pr. hel runde ind og ud på skiferen */
+  slabSideCm:1.2,      /* ildbåndets bredde i siderne, i cm */
+  slabVertCm:2,        /* ildbåndets bredde foroven og forneden, i cm */
+  pxPerCm:60,          /* ca. CSS-pixel pr. cm på en telefon */
+  micGain:45,          /* mikrofonens følsomhed: højere = reagerer på svagere lyde */
+  micMargin:1.25,      /* hvor langt over baggrundsstøjen en lyd skal være */
+  micChargeRate:.5,    /* hvor hurtigt vedvarende lyd lader ilden op, pr. sekund */
+  droneGain:.16,       /* dronens styrke */
+  droneGainMic:.24,    /* dronens styrke, mens mikrofonen er tændt */
+  micDuck:.4,          /* effekternes styrke, mens mikrofonen er tændt (så den ikke hører dem) */
+  micDuckBed:.5        /* skiferens bulder og knitren, mens mikrofonen er tændt */
+};
+
+
 /* ---------- Kaossfære ---------- */
 const cv=$('#sphere'),cx=cv.getContext('2d');
-let W=0,last=0,secIdx=0,sf=0,dc=0;
+let W=0,last=0,secIdx=0,sigilTick=0,droneTick=0;
 let charge=0,mood=null,mt=0,droneLp=null,wish='';   /* ladning, stemning fra kort, sidste sigils bogstaver */
 let rot=0,base=reduce?0:.25,vel=base,pulse=0,hue=285,hueT=285;
 const ripples=[];
@@ -206,14 +228,14 @@ function frame(ts){
   vel+=(base-vel)*(1-Math.exp(-dt*.9));
   rot+=vel*dt;
   pulse*=Math.exp(-dt*2.2);
-  charge*=Math.exp(-dt*.06);
+  charge*=Math.exp(-dt*TUNE.chargeDecay);
   micStep(dt,ts);
   if(mood===null)hueT+=dt*drift;
   else{mt+=dt*(.25+drift*.01);hueT=mood+45*Math.sin(mt)}
-  if(droneLp&&++dc%12===0)droneLp.frequency.setTargetAtTime(320+charge*600,ac.currentTime,.3);
+  if(droneLp&&++droneTick%12===0)droneLp.frequency.setTargetAtTime(320+charge*600,ac.currentTime,.3);
   hue+=(hueT-hue)*(1-Math.exp(-dt*3));
   root.style.setProperty('--h',(hue%360).toFixed(1));
-  if(cur&&++sf%3===0)drawSigil();
+  if(cur&&++sigilTick%3===0)drawSigil();
   draw(ts/1000);
   fireStep(dt,ts);
   updateBurn();
@@ -303,11 +325,11 @@ $('#save').addEventListener('click',()=>{
   a.download='sigil.png';a.href=t.toDataURL('image/png');a.click();
 });
 
-const BURN_AT=.55,bb=$('#burn');
+const bb=$('#burn');
 let burnReady=false;
 function updateBurn(){
   const has=!!cur&&performance.now()>burnUntil;
-  const r=has&&(burnReady?charge>=BURN_AT*.45:charge>=BURN_AT);
+  const r=has&&(burnReady?charge>=TUNE.burnAt*.45:charge>=TUNE.burnAt);
   bb.disabled=!has;bb.classList.toggle('cold',!r);burnReady=r;
 }
 function fizzle(){
@@ -516,7 +538,7 @@ const burnPat=()=>{const a=[];for(let i=0;i<14;i++)a.push(15+Math.random()*30|0,
 const DICEPAT=[];for(let i=0;i<9;i++)DICEPAT.push(20,45);DICEPAT.push(150);
 
 /* ---------- Lyd ---------- */
-let ac,master,noiseB,muted=false,breathG=null,hissG=null;const drn=[];
+let ac,master,droneG=null,noiseB,muted=false,breathG=null,hissG=null;const drn=[];
 function audio(){
   if(!ac){
     try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){return}
@@ -532,7 +554,7 @@ function audio(){
     const hz=ac.createBufferSource(),hf=ac.createBiquadFilter();
     hz.buffer=noiseB;hz.loop=true;hz.playbackRate.value=1.7;hf.type='bandpass';hf.frequency.value=650;hf.Q.value=.5;
     hz.connect(hf);hf.connect(hissG);hissG.connect(master);hz.start();
-    const g=ac.createGain();g.gain.value=.16;lp.connect(g);g.connect(master);
+    droneG=ac.createGain();droneG.gain.value=TUNE.droneGain;lp.connect(droneG);droneG.connect(master);
     [55,55.35,82.4].forEach(f=>{const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=f*pitchMul;o.connect(lp);o.start();drn.push([o,f])});
     const l=ac.createOscillator(),lg=ac.createGain();l.frequency.value=.06;lg.gain.value=120;l.connect(lg);lg.connect(lp.frequency);l.start();
   }
@@ -540,12 +562,14 @@ function audio(){
 }
 function tone(f,d,v,type,to,at){
   if(!ac||muted)return;const t=ac.currentTime+(at||0),o=ac.createOscillator(),g=ac.createGain();
+  const q=micAn?TUNE.micDuck:1;v*=q;
   o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(to)o.frequency.exponentialRampToValueAtTime(to,t+d);
   g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
   o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.02);
 }
 function puff(d,v,f,type,at){
   if(!ac||muted)return;const t=ac.currentTime+(at||0),src=ac.createBufferSource(),fl=ac.createBiquadFilter(),g=ac.createGain();
+  v*=micAn?TUNE.micDuck:1;
   src.buffer=noiseB;fl.type=type||'bandpass';fl.frequency.value=f;
   g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
   src.connect(fl);fl.connect(g);g.connect(master);src.start(t,Math.random()*.5,d+.02);
@@ -568,21 +592,27 @@ setInterval(()=>{if(ac&&!muted&&secIdx===1&&Math.random()<.55)sfx.pop()},260);
 setInterval(()=>{                       /* skiferen: ildens bulder og knitren i åndedrættets rytme */
   if(!ac||muted||!breathG)return;
   const on=secIdx===6,b=breath();
-  breathG.gain.setTargetAtTime(on?.015+.07*b:0,ac.currentTime,.15);
-  if(hissG)hissG.gain.setTargetAtTime(on?.03+.03*b+.04*charge:0,ac.currentTime,.2);
+  const bed=micAn?TUNE.micDuckBed:1;
+  breathG.gain.setTargetAtTime((on?.015+.07*b:0)*bed,ac.currentTime,.15);
+  if(hissG)hissG.gain.setTargetAtTime((on?.03+.03*b+.04*charge:0)*bed,ac.currentTime,.2);
   if(on&&Math.random()<.2+.5*b*b+.3*charge)sfx.pop(.08+.25*b);
 },100);
-const SPK='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/>';
+const SPK='<svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 9v6h4l5 4V5L8 9H4z"/>';
 const mu=$('#mute');
 function muteIcon(){mu.innerHTML=SPK+(muted?'<path d="M17 9l5 6M22 9l-5 6"/>':'<path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>')+'</svg>'}
-function applyGain(){if(master)master.gain.setTargetAtTime(muted?0:(micAn?.3:.6),ac.currentTime,.1)}
+function applyGain(){
+  if(!master)return;
+  const t=ac.currentTime;
+  master.gain.setTargetAtTime(muted?0:.6,t,.1);
+  if(droneG)droneG.gain.setTargetAtTime(micAn?TUNE.droneGainMic:TUNE.droneGain,t,.4);
+}
 mu.addEventListener('click',()=>{muted=!muted;applyGain();muteIcon()});
 muteIcon();
 
 /* ---------- Stemme: mikrofonen lader alteret ---------- */
 let micAn=null,micBuf=null,micStream=null,micSrc=null,voice=0,vFloor=.004,vPrev=0,vLast=0;
 const mic=$('#mic');
-const MICSVG='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>';
+const MICSVG='<svg viewBox="0 0 24 24" width="24" height="24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>';
 function micIcon(){mic.innerHTML=MICSVG+(micAn?'':'<path d="M4 4l16 16"/>')+'</svg>';mic.classList.toggle('live',!!micAn)}
 async function micStart(){
   audio();
@@ -609,9 +639,10 @@ mic.addEventListener('click',async()=>{
 micIcon();
 
 /* En lyd tæller som et tryk på kaossfæren; vedvarende lyd lader ilden op. */
-function voiceBurst(){
+function voiceBurst(now){
   if(!reduce)vel+=(Math.random()<.5?-1:1)*(6+Math.random()*5);
   pulse=1;charge=Math.min(1,charge+.18);
+  compassSpin(now);
   if(secIdx===0){
     if(mood===null)hueT+=30+Math.random()*60;else mt+=.8+Math.random()*1.2;
     ripples.push(performance.now()/1000);
@@ -623,11 +654,11 @@ function micStep(dt,now){
   let sum=0;for(let i=0;i<micBuf.length;i++)sum+=micBuf[i]*micBuf[i];
   const rms=Math.sqrt(sum/micBuf.length);
   vFloor+=(rms-vFloor)*(rms<vFloor?.3:.0015);            /* følger baggrundsstøjen, så den ikke tæller med */
-  const v=Math.min(1,Math.max(0,(rms-vFloor*1.25-.0015)*45));   /* følsomhed: hvisken er nok */
+  const v=Math.min(1,Math.max(0,(rms-vFloor*TUNE.micMargin-.0015)*TUNE.micGain));   /* følsomhed: hvisken er nok */
   voice+=(v-voice)*(1-Math.exp(-dt*(v>voice?40:6)));
-  if(voice>.28&&vPrev<=.28&&now-vLast>180){vLast=now;voiceBurst()}
+  if(voice>.28&&vPrev<=.28&&now-vLast>180){vLast=now;voiceBurst(now)}
   vPrev=voice;
-  charge=Math.min(1,charge+voice*dt*.5);
+  charge=Math.min(1,charge+voice*dt*TUNE.micChargeRate);
   pulse=Math.max(pulse,voice*.8);
 }
 
@@ -692,7 +723,7 @@ function roll(){
 dies.forEach(e=>{e.innerHTML=dieSvg(1+Math.random()*6|0);e.addEventListener('click',roll)});
 /* ---------- Kaoskompas ---------- */
 const kc=$('#kompas'),kx=kc.getContext('2d');
-let KW=0,ka=0,kw=0,kt=0,kk=30,kcc=4,kmode='still',kuntil=0,kj=0,ks=0;
+let KW=0,ka=0,kw=0,kt=0,kk=30,kcc=4,kmode='still',kuntil=0,kj=0,ks=0,kshake=0;   /* vinkel, fart, mål, adfærd, hvilevinkel, rystelse */
 const wr=d=>((d+Math.PI)%6.2832+6.2832)%6.2832-Math.PI;
 function kpick(now){
   kmode=Math.random()<charge?pk(['jitter','spin','jump','seek']):['seek','seek','jitter','spin','still','still','jump','drift'][Math.random()*8|0];
@@ -703,15 +734,23 @@ function kpick(now){
   else if(kmode==='still'){kw=0;ks=ka;kuntil=now+(5000+Math.random()*5000)*(1-charge*.5)}
   else if(kmode==='drift')kt=ka;
 }
+function compassRest(now){kmode='still';kw=0;ks=ka;kshake=1;kuntil=now+(5000+Math.random()*5000)*(1-charge*.5)}
+function compassSpin(now){kmode='spin';kw=(Math.random()<.5?-1:1)*(12+Math.random()*10);kuntil=now+60000}
 function kdraw(dt,now){
   if(!KW)return;
   if(now>kuntil)kpick(now);
+  kshake*=Math.exp(-dt*.5);
   if(kmode==='seek')kw+=(kk*wr(kt-ka)-kcc*kw)*dt;
   else if(kmode==='jitter')kw+=((Math.random()-.5)*400*(1+charge*2)+30*wr(kt-ka)-5*kw)*dt;
-  else if(kmode==='spin')kw*=Math.exp(-dt*.4);
+  else if(kmode==='spin'){
+    const hold=voice>.15;                                  /* så længe der er lyd, holder nålen farten */
+    kw*=Math.exp(-dt*(hold?.1:.9));
+    if(hold&&Math.abs(kw)<8)kw+=(kw<0?-1:1)*dt*25*voice;
+    if(!hold&&Math.abs(kw)<.5)compassRest(now);
+  }
   else if(kmode==='drift'){kt+=(Math.random()-.5)*dt*4;kw+=(3*wr(kt-ka)-3*kw)*dt}
   else if(kmode==='jump'){kw=0;if(now>kj){ka=Math.random()*6.2832;kj=now+180+Math.random()*500;sfx.tick();buzz(8)}}
-  else{kw=0;ka=ks+(Math.random()-.5)*.06+Math.sin(now*.045)*.015}
+  else{kw=0;ka=ks+(Math.random()-.5)*(.06+kshake*.14+voice*.1)+Math.sin(now*.045)*.015}
   ka+=kw*dt;
   const c=KW/2,R=KW*.46,h=(hue%360).toFixed(0);
   kx.globalCompositeOperation='destination-out';kx.fillStyle='rgba(0,0,0,'+(reduce?1:.22)+')';kx.fillRect(0,0,KW,KW);
@@ -782,11 +821,8 @@ function nyHandling(){
 hd.addEventListener('click',nyHandling);
 hd.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();nyHandling()}});
 /* ---------- Skifer (WebGL) ---------- */
-const BREATH=10;   /* sekunder pr. åndedrag */
-const SLAB={sideCm:1.2,vertCm:2};   /* ildbåndets bredde i cm: siderne og foroven/forneden; skiferen fylder resten */
-const PX_PER_CM=60;   /* ca. CSS-pixel pr. cm på en telefon */
-function slabRect(){const mx=SLAB.sideCm*PX_PER_CM*SQ,my=SLAB.vertCm*PX_PER_CM*SQ;return[mx,my,SW-mx,SH-my]}
-const breath=()=>.5+.5*Math.sin(performance.now()/1000*6.28318/BREATH-1.5708);
+function slabRect(){const mx=TUNE.slabSideCm*TUNE.pxPerCm*SQ,my=TUNE.slabVertCm*TUNE.pxPerCm*SQ;return[mx,my,SW-mx,SH-my]}
+const breath=()=>.5+.5*Math.sin(performance.now()/1000*6.28318/TUNE.breath-1.5708);
 const slabTime=()=>(performance.now()/1000*(reduce?.3:1))%3600;
 const VS='attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
 const FS=`
