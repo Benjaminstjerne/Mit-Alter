@@ -88,6 +88,20 @@ button.cold:not(:disabled){opacity:.55}
   #sigil.burn{transition-duration:.01s}
   .card{transition:none}
 }
+/* Tarot: swipe til højre viser pladsernes betydning */
+#tarot{position:relative;overflow:hidden;touch-action:pan-y}
+#tarot::before{content:"";position:absolute;left:0;top:50%;width:3px;height:2.5rem;transform:translateY(-50%);border-radius:0 3px 3px 0;background:var(--oct);opacity:.5;box-shadow:0 0 8px var(--oct);pointer-events:none}
+#posinfo{position:absolute;inset:0;z-index:3;overflow-y:auto;touch-action:pan-y;padding:1.5rem 1.25rem 2rem;background:#160c20;color:var(--oct);transform:translateX(-102%);transition:transform .45s cubic-bezier(.3,.7,.2,1);visibility:hidden}
+#posinfo.open{transform:none;visibility:visible}
+#posinfo svg.dia{display:block;width:min(46%,8rem);margin:0 auto 1.25rem;overflow:visible;filter:drop-shadow(0 0 8px var(--oct))}
+#posinfo svg.dia rect{fill:none;stroke:var(--oct);stroke-width:1.2}
+#posinfo svg.dia text{fill:var(--oct);font:7px "Palatino Linotype",Palatino,Georgia,serif;text-anchor:middle}
+#posinfo ol{list-style:none;margin:0 auto;padding:0;max-width:26rem}
+#posinfo li{display:grid;grid-template-columns:1.6rem 1fr;gap:.6rem;margin:0 0 .85rem;font-size:.95rem;line-height:1.4;text-shadow:0 0 8px var(--oct)}
+#posinfo li b{font-weight:400;border:1px solid var(--oct);border-radius:50%;width:1.5rem;height:1.5rem;display:grid;place-items:center;font-size:.8rem}
+#posinfo li span strong{font-weight:400;letter-spacing:.06em;text-transform:uppercase;font-size:.85rem;display:block}
+.pos{position:absolute;left:0;right:0;bottom:7%;text-align:center;font-style:normal;font-size:clamp(.7rem,2.6vw,.95rem);color:var(--oct);opacity:.8;text-shadow:0 0 6px var(--oct)}
+@media (prefers-reduced-motion:reduce){#posinfo{transition:none}}
 </style>
 </head>
 <body>
@@ -105,7 +119,7 @@ button.cold:not(:disabled){opacity:.55}
   </div>
     <div id="wrap"><canvas id="sigil" aria-label="Din sigil"></canvas><canvas id="fire"></canvas></div>
 </section>
-<section>
+<section id="tarot">
   <div id="picker">
     <button data-n="1" class="on" aria-label="Ét kort"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg></button>
     <button data-n="3" aria-label="Tre kort"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="2" y="6" width="6" height="12" rx="1"/><rect x="9" y="6" width="6" height="12" rx="1"/><rect x="16" y="6" width="6" height="12" rx="1"/></svg></button>
@@ -113,6 +127,7 @@ button.cold:not(:disabled){opacity:.55}
   </div>
   <div id="spread"></div>
   <div id="note" aria-live="polite"></div>
+  <div id="posinfo" aria-hidden="true"></div>
 </section>
 <section>
   <div class="dice"><button class="die" aria-label="Terning"></button><button class="die" aria-label="Terning"></button></div>
@@ -412,11 +427,11 @@ function build(n){
   spread=n;shuffle();
   const sp=$('#spread');sp.className='s'+n;sp.innerHTML='';$('#note').textContent='';
   document.querySelectorAll('#picker button').forEach(b=>b.classList.toggle('on',+b.dataset.n===n));
-  LAY[n].forEach(p=>{
+  LAY[n].forEach((p,i)=>{
     const d=document.createElement('div');
     d.className='deck'+(p[2]?' x':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Kort');
     d.style.gridColumn=p[0];d.style.gridRow=p[1];
-    d.innerHTML='<div class="card"><div class="face">'+BACK+'</div><div class="face front"></div></div>';
+    d.innerHTML='<div class="card"><div class="face">'+BACK+(n===10?'<i class="pos">'+(i+1)+'</i>':'')+'</div><div class="face front"></div></div>';
     d.addEventListener('click',()=>pick(d));
     d.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick(d)}});
     sp.appendChild(d);
@@ -424,6 +439,56 @@ function build(n){
 }
 document.querySelectorAll('#picker button').forEach(b=>b.addEventListener('click',()=>build(+b.dataset.n)));
 build(1);
+
+/* ---------- Pladsernes betydning (swipe til højre; swipe til venstre lukker) ---------- */
+const POS={
+  1:[['Kortet','Svaret på dit spørgsmål, eller dagens kort.']],
+  3:[['Fortiden','Det, der ligger bag dig og stadig præger situationen.'],['Nutiden','Det, der er på spil lige nu.'],['Fremtiden','Det, der tegner sig, hvis du går videre som nu.']],
+  10:[['Kernen','Situationen, som den er lige nu.'],
+      ['Det, der krydser','Forhindringen eller kraften, der lægger sig ind over og arbejder imod, eller bare komplicerer.'],
+      ['Bunden','Grundlaget under det hele: det, der bærer situationen og ofte er ubevidst.'],
+      ['Fortiden','Det, der lige er ved at forlade billedet, men stadig sætter sit præg.'],
+      ['Kronen','Det bevidste mål: det, du sigter mod, eller det bedste, der kan nås.'],
+      ['Det kommende','Det, der er på vej ind i den nærmeste tid.'],
+      ['Dig selv','Din egen holdning og rolle i det hele. Staven går nedefra og op: 7 til 10.'],
+      ['Omgivelserne','Andre mennesker og ydre påvirkninger omkring dig.'],
+      ['Håb og frygt','Det, du ønsker, og det, du frygter. Ofte er det det samme.'],
+      ['Udfaldet','Hvor det bevæger sig hen, hvis intet ændres.']]
+};
+function diagram(n){
+  if(n===1)return '';
+  const L=LAY[n],cw=16,ch=26,g=5;
+  const cols=Math.max(...L.map(p=>p[0])),rows=Math.max(...L.map(p=>p[1]));
+  let o='';
+  L.forEach((p,i)=>{
+    const x=(p[0]-1)*(cw+g),y=(p[1]-1)*(ch+g),cx=x+cw/2,cy=y+ch/2;
+    const tx=n===10&&i===0?cx-4.5:n===10&&i===1?cx+5.5:cx;
+    o+='<rect x="'+x+'" y="'+y+'" width="'+cw+'" height="'+ch+'" rx="2"'+(p[2]?' transform="rotate(90 '+cx+' '+cy+')" fill="rgba(22,12,32,.7)"':'')+'/><text x="'+tx+'" y="'+(cy+2.5)+'">'+(i+1)+'</text>';
+  });
+  return '<svg class="dia" viewBox="-2 -2 '+(cols*(cw+g)-g+4)+' '+(rows*(ch+g)-g+4)+'" aria-hidden="true">'+o+'</svg>';
+}
+const pi=$('#posinfo');
+function showInfo(open){
+  if(open){
+    pi.innerHTML=diagram(spread)+'<ol>'+POS[spread].map((p,i)=>'<li><b>'+(i+1)+'</b><span><strong>'+p[0]+'</strong>'+p[1]+'</span></li>').join('')+'</ol>';
+    pi.scrollTop=0;
+  }
+  pi.classList.toggle('open',open);pi.setAttribute('aria-hidden',open?'false':'true');
+  buzz(10);
+}
+let swp=null,swallow=false;
+const tarotSec=$('#tarot');
+tarotSec.addEventListener('pointerdown',e=>{swp={x:e.clientX,y:e.clientY}});
+tarotSec.addEventListener('pointercancel',()=>{swp=null});
+tarotSec.addEventListener('pointerup',e=>{
+  if(!swp)return;
+  const dx=e.clientX-swp.x,dy=e.clientY-swp.y;swp=null;
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5){
+    swallow=true;setTimeout(()=>{swallow=false},350);
+    showInfo(dx>0);
+  }
+});
+tarotSec.addEventListener('click',e=>{if(swallow){e.stopPropagation();e.preventDefault()}},true);
 
 const MD=['Ny begyndelse, tillid og spring ud i det ukendte.','Vilje, evne og midlerne til at skabe det, du vil.','Intuition, hemmeligheder og indre viden.','Overflod, skabelse og omsorg.','Struktur, autoritet og stabilitet.','Tradition, tro og faste rammer.','Et valg, en forening og værdier i tråd.','Viljestyrke og sejr gennem kontrol.','Blid styrke, mod og selvbeherskelse.','Tilbagetrækning, søgen og indre lys.','Cyklusser, skæbne og et vendepunkt.','Sandhed, balance og konsekvens.','Overgivelse, pause og nyt perspektiv.','Afslutning, forvandling og slip.','Balance, tålmodighed og blanding.','Binding, afhængighed og skyggesiden.','Pludseligt sammenbrud og befrielse.','Håb, fornyelse og ro.','Illusion, drømme og det ubevidste.','Glæde, klarhed og livskraft.','Et kald, et opgør og genfødsel.','Fuldendelse, helhed og integration.'];
 const MN=['Et gnistrende frø af vilje og skaberkraft; en ny drivkraft.','Verden i hånden, og du vælger, hvilken retning din vilje skal tage.','Dine planer sejler ud; ventetid, udsyn og udvidelse.','Fest og fast grund; et sted, hvor du hører til.','Rivalisering og livlig strid; alle vil noget forskelligt.','Sejr og anerkendelse efter lang indsats.','Du forsvarer din position mod modstand.','Hurtig bevægelse; alt falder pludselig på plads.','Udmattet, men stadig stående; hold ud den sidste stump.','En byrde af ansvar; du bærer for meget alene.','En nysgerrig ildsjæl med et nyt budskab og lyst til at prøve.','Dristig fart og jagt; handling før eftertanke.','Varm, modig udstråling og selvsikker kreativitet.','En visionær leder, der handler med vilje og overblik.','En åbnet følelse; kærlighed, medfølelse eller en indre kilde.','Gensidig forbindelse; to kræfter mødes i balance.','Fællesskab, fest og venskab.','Apati og indadvendthed; du overser et tilbud lige foran dig.','Sorg over det tabte, mens noget stadig står tilbage.','Nostalgi, barndom og enkle gaver.','Mange drømme og illusioner; svært at vælge det virkelige.','Du forlader noget, der ikke længere nærer dig.','Tilfredshed; et ønske, der går i opfyldelse.','Følelsesmæssig fuldendelse og harmoni i hjemmet.','Et blidt, drømmende budskab og åbenhed for følelser.','En romantiker, der byder frem med charme og tilbud.','Dyb empati og intuition; du rummer andres følelser.','Følelsesmæssig modenhed; ro midt i bølgerne.','Klarhed og gennembrud; sandheden skærer igennem.','Fastlåst valg; du lukker øjnene for en beslutning.','Hjertesorg; en smertefuld, men sand erkendelse.','Hvile og tilbagetrækning efter strid.','En hul sejr; konflikt, hvor alle mister noget.','Overgang mod roligere vande; det værste ligger bag dig.','List og undvigelse; noget sker i det skjulte.','Du føler dig fanget, men båndene er løsere, end de ser ud.','Nattens bekymringer; tanker, der vokser i mørket.','Et smertefuldt endepunkt; det værste er nu overstået.','Skarp nysgerrighed; spørgsmål, observation og nye ideer.','Hurtig og kompromisløs tankekraft; angreb i fuld fart.','Klar, ærlig dømmekraft; du ser sagen uden pynt.','Intellektuel autoritet; strenge principper og retfærdig dom.','Et konkret frø af muligheder; en materiel begyndelse.','Mange bolde i luften; fleksibel balance.','Samarbejde og håndværk; dygtighed bliver set.','At klamre sig til tryghed; kontrol over det, du ejer.','Mangel og udstødelse; hjælp findes tæt på, men er svær at se.','At give og modtage; rimelig fordeling af ressourcer.','Tålmodig vurdering; vent på høsten.','Flid og øvelse; du mestrer et håndværk gennem gentagelse.','Selvstændig overflod og nydelse af det, du har skabt.','Arv, familie og varig rigdom på tværs af generationer.','Jordnær nysgerrighed; en ny færdighed eller et studie.','Stabil, ihærdig fremdrift; langsomt, men sikkert.','Omsorgsfuld, praktisk overflod; hjem og krop nærer dig.','Sikker velstand og pålidelighed; du bygger noget, der holder.'];
@@ -486,6 +551,7 @@ const sfx={
   flip(){puff(.22,.25,1800);tone(180,.2,.12,'sine',90)},
   burn(){puff(2.6,.35,700);for(let i=0;i<32;i++)puff(.03,.3,3000+Math.random()*3000,'highpass',Math.random()*2.6)},
   tick(){puff(.02,.2,3500,'highpass')},
+  reset(){puff(.9,.4,2500,'highpass');tone(440,1,.2,'sine',55);tone(330,1.2,.15,'triangle',40,.1)},
   static(){puff(.5,.35,5000,'highpass');puff(.35,.25,900);tone(70,.4,.25,'sine',35)},
   pop(v){puff(.025,v||.12,2500+Math.random()*3000,'highpass')},
   dice(){for(let i=0;i<9;i++){puff(.05,.35,900+Math.random()*1800,'bandpass',i*.065+Math.random()*.03);tone(140+Math.random()*100,.06,.12,'square',0,i*.065)}tone(70,.35,.4,'sine',40,.65)}
@@ -528,7 +594,16 @@ function loadState(){
 }
 loadState();
 
+function resetDice(){
+  arrowN=8;trailA=.24;drift=10;fireOff=0;pitchMul=1;
+  if(!reduce){base=.25;vel+=3}
+  if(ac)drn.forEach(d=>d[0].frequency.setTargetAtTime(d[1],ac.currentTime,.6));
+  pulse=1;ripples.push(performance.now()/1000);
+  sfx.reset();buzz([70,50,70,50,220]);
+  saveState();
+}
 function effect(a,b){
+  if((a===1&&b===1)||(a===6&&b===6)){resetDice();return}
   const i=b-1;
   if(a===1){if(!reduce){base=[-1.6,-.6,-.1,.1,.6,1.6][i];vel+=base*3}}
   else if(a===2)arrowN=[3,4,5,6,8,12][i];
