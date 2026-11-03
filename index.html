@@ -114,8 +114,8 @@ button.cold:not(:disabled){opacity:.55}
 #laas{width:min(100%,22rem);display:flex;flex-direction:column;align-items:center;gap:1rem;margin-top:1rem}
 #laas[hidden]{display:none}
 #laasstar{width:min(80%,15rem);overflow:visible;touch-action:manipulation}
-#laasstar g{cursor:pointer;color:var(--oct);-webkit-tap-highlight-color:transparent}
-#laasstar g:focus-visible{outline:none}
+#laasstar,#laasstar *{outline:none;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+#laasstar g{cursor:pointer;color:var(--oct)}
 #laasstar g:focus-visible path{stroke-width:4}
 #laasstar path{fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px var(--oct));transition:stroke-width .15s}
 #laasstar circle{fill:transparent}
@@ -1203,6 +1203,7 @@ function lockTap(g){
   if(lseq.length<4)return;
   const seq=lseq;lseq=[];setTimeout(()=>lockDone(seq),200);
 }
+lstar.addEventListener('pointerdown',ev=>{if(ev.target.closest('g[data-i]'))ev.preventDefault()});
 lstar.addEventListener('click',ev=>{const g=ev.target.closest('g[data-i]');if(g)lockTap(g)});
 lstar.addEventListener('keydown',ev=>{const g=ev.target.closest('g[data-i]');if(g&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();lockTap(g)}});
 $('#laasstop').addEventListener('click',()=>{lmode='enter';lseq=[];lockUI()});
