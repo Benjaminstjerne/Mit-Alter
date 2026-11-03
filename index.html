@@ -24,7 +24,7 @@ button:disabled{opacity:.4;cursor:default}
 button:not(.die) svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}   /* alle ikoner */
 button:not(:disabled):active{border-color:var(--oct)}
 input{width:min(100%,24rem);margin:.4rem 0 1rem;padding:.6rem 0;font:inherit;color:var(--oct);caret-color:var(--oct);text-shadow:0 0 8px var(--oct);background:transparent;border:0;border-bottom:1px solid var(--oct);border-radius:0}
-input.shake,#mic.shake{animation:shake .35s}
+input.shake,#mic.shake,#bog button.shake{animation:shake .35s}
 @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 .row{display:flex;flex-wrap:wrap;justify-content:center;gap:.6rem;width:min(100%,24rem)}
 
@@ -88,7 +88,7 @@ button.cold:not(:disabled){opacity:.55}
 #burn:not(.cold):not(:disabled){border-color:var(--oct);box-shadow:0 0 14px var(--oct)}
 
 @media (prefers-reduced-motion:reduce){
-  input.shake,#mic.shake,.die.roll,.die.land svg{animation:none}
+  input.shake,#mic.shake,#bog button.shake,.recbtn.live,.die.roll,.die.land svg{animation:none}
   #sigil.burn{transition-duration:.01s}
   .card{transition:none}
 }
@@ -105,13 +105,42 @@ button.cold:not(:disabled){opacity:.55}
 #posinfo li b{font-weight:400;border:1px solid var(--oct);border-radius:50%;width:1.5rem;height:1.5rem;display:grid;place-items:center;font-size:.8rem}
 #posinfo li span strong{font-weight:400;letter-spacing:.06em;text-transform:uppercase;font-size:.85rem;display:block}
 .pos{position:absolute;left:0;right:0;bottom:7%;text-align:center;font-style:normal;font-size:clamp(.7rem,2.6vw,.95rem);color:var(--oct);opacity:.8;text-shadow:0 0 6px var(--oct)}
+/* Logbog */
+#bog{height:100dvh;min-height:0;justify-content:flex-start;gap:1rem;overflow-y:auto;touch-action:pan-y;padding-top:calc(3.4rem + env(safe-area-inset-top));padding-bottom:calc(3rem + env(safe-area-inset-bottom))}
+#bogmoon{color:var(--oct);filter:drop-shadow(0 0 10px var(--oct));line-height:0}
+#bogliste{width:min(100%,26rem);display:flex;flex-direction:column;gap:.7rem}
+.warn{margin:0;text-align:center;font-size:.85rem;color:var(--dim)}
+.day{margin-top:.8rem;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--oct);opacity:.75;text-shadow:0 0 8px var(--oct)}
+.e{border-left:2px solid var(--c);padding:.25rem 0 .25rem .85rem;box-shadow:-6px 0 14px -10px var(--c)}
+.mark{display:flex;flex-direction:column;gap:.5rem;cursor:pointer;color:var(--c);-webkit-tap-highlight-color:transparent}
+.mark:focus-visible{outline:2px solid var(--c);outline-offset:4px}
+.when{display:flex;align-items:center;gap:.5rem;font-size:.82rem;text-shadow:0 0 8px var(--c)}
+.when svg{display:block}
+.body{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
+.thumbs{display:flex;flex-wrap:wrap;gap:5px}
+.thumbs>span{display:block;width:28px;filter:drop-shadow(0 0 4px var(--c))}
+.thumbs svg{display:block;width:100%;height:auto}
+.ic{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 6px var(--c))}
+.ic.big{width:30px;height:30px}
+.att{display:flex;gap:.35rem;opacity:.85}
+.att .ic{width:16px;height:16px;filter:none}
+.det{display:flex;flex-direction:column;gap:.8rem;margin-top:.8rem;color:var(--c)}
+.names{list-style:none;margin:0;padding:0;font-size:.92rem;text-shadow:0 0 8px var(--c)}
+.media{display:flex;flex-direction:column;gap:.6rem}
+.media:empty{display:none}
+.media img,.media video{display:block;width:100%;height:auto;border-radius:4px;border:1px solid var(--dim)}
+.media audio{width:100%}
+.tools{display:flex;gap:.5rem}
+.tools button.sure{border-color:var(--wax);color:var(--ink);background:var(--wax)}
+.recbtn.live{color:var(--ink);background:var(--wax);border-color:var(--wax);animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 16px var(--wax)}}
 @media (prefers-reduced-motion:reduce){#posinfo{transition:none}}
 </style>
 </head>
 <body>
 <button id="mute" aria-label="Lyd"></button>
 <button id="mic" aria-label="Mikrofon"></button>
-<nav id="dots"><button aria-label="Kaossfære"></button><button aria-label="Sigil"></button><button aria-label="Tarot"></button><button aria-label="Terninger"></button><button aria-label="Kaoskompas"></button><button aria-label="Ord"></button><button aria-label="Skifer"></button></nav>
+<nav id="dots"><button aria-label="Kaossfære"></button><button aria-label="Sigil"></button><button aria-label="Tarot"></button><button aria-label="Terninger"></button><button aria-label="Kaoskompas"></button><button aria-label="Ord"></button><button aria-label="Skifer"></button><button aria-label="Logbog"></button></nav>
 <section>
   <canvas id="sphere" tabindex="0" role="button" aria-label="Kaossfære"></canvas>
 </section>
@@ -144,14 +173,23 @@ button.cold:not(:disabled){opacity:.55}
   <div id="hand" tabindex="0" role="button" aria-label="Tre ord"></div>
 </section>
 <section id="skifer"><canvas id="slab" aria-label="Skifer"></canvas></section>
+<section id="bog">
+  <div id="bogmoon" aria-hidden="true"></div>
+  <div class="row">
+    <button id="bogfoto" aria-label="Tilføj billede, lyd eller video" title="Tilføj billede, lyd eller video"><svg viewBox="0 0 24 24" width="24" height="24"><rect x="3" y="7" width="18" height="12" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M8.5 7l1.2-2.5h4.6L15.5 7"/></svg></button>
+    <button id="bogrec" class="recbtn" aria-label="Optag lyd" title="Optag lyd"><svg viewBox="0 0 24 24" width="24" height="24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg></button>
+  </div>
+  <div id="bogliste"></div>
+  <input type="file" id="pickfile" accept="image/*,audio/*,video/*" hidden>
+</section>
 
 <script>
-/* Kaosalter: ét alter til telefonen, syv sider der ruller lodret.
-   Sider: kaossfære, sigil, tarot, terninger, kaoskompas, tre ord, skifer.
+/* Kaosalter: ét alter til telefonen, otte sider der ruller lodret.
+   Sider: kaossfære, sigil, tarot, terninger, kaoskompas, tre ord, skifer, logbog.
    Delt tilstand: ladning (fra tryk og stemme), stemning (sidste kort), terningernes ændringer
-   (gemmes i localStorage) og sidste sigils bogstaver (farver ordene).
+   (gemmes i localStorage), sidste sigils bogstaver (farver ordene) og logbogen (IndexedDB, kun på telefonen).
    Rækkefølge: indstillinger, kaossfære, sigil, ild, fuldskærm og sider, tarot, haptik, lyd,
-   stemme, terninger, kaoskompas, tre ord, skifer, start. */
+   stemme, terninger, kaoskompas, tre ord, skifer, logbog, start. */
 (()=>{
 const $=s=>document.querySelector(s);
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -340,7 +378,7 @@ bb.addEventListener('click',()=>{
   if(!cur)return;
   if(!burnReady){fizzle();return}
   $('#save').disabled=true;
-  sg.classList.add('burn');ignite();sfx.burn();buzz(burnPat());
+  sg.classList.add('burn');ignite();sfx.burn();buzz(burnPat());logSigil();
   setTimeout(()=>{sg.classList.remove('burn');cur='';drawSigil()},reduce?50:2600);
 });
 
@@ -384,7 +422,7 @@ addEventListener('click',()=>{
 });
 const secs=[...document.querySelectorAll('section')],dots=[...document.querySelectorAll('#dots button')];
 dots.forEach((b,i)=>b.addEventListener('click',()=>secs[i].scrollIntoView({behavior:reduce?'auto':'smooth'})));
-const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){dots.forEach((b,i)=>b.classList.toggle('on',secs[i]===e.target));secIdx=secs.indexOf(e.target);document.body.classList.toggle('slab',secIdx===6)}}),{threshold:.6});
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){dots.forEach((b,i)=>b.classList.toggle('on',secs[i]===e.target));secIdx=secs.indexOf(e.target);document.body.classList.toggle('slab',secIdx===6);if(secIdx===7)logOpenPage()}}),{threshold:.6});
 secs.forEach(x=>io.observe(x));
 
 /* ---------- Tarot ---------- */
@@ -430,7 +468,7 @@ let arrows='';for(let i=0;i<8;i++)arrows+='<path transform="rotate('+i*45+')" d=
 const BACK='<svg viewBox="0 0 200 340"><rect x="2" y="2" width="196" height="336" rx="10" fill="#1d0f2b" stroke="#a99bb8"/><rect x="9" y="9" width="182" height="322" rx="6" fill="none" stroke="#a99bb8" opacity=".4"/><g transform="translate(100 170)" stroke="#b58cf0" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+arrows+'</g></svg>';
 const cname=id=>id<22?MJ[id]:RK[(id-22)%14]+' of '+SU[(id-22)/14|0];
 const LAY={1:[[1,1]],3:[[1,1],[2,1],[3,1]],10:[[2,2],[2,2,1],[2,3],[1,2],[2,1],[3,2],[4,4],[4,3],[4,2],[4,1]]};
-let deck=[],spread=1;
+let deck=[],spread=1,curRead=null;
 function shuffle(){deck=[...Array(78).keys()];for(let i=77;i>0;i--){const j=Math.random()*(i+1)|0;const t=deck[i];deck[i]=deck[j];deck[j]=t}}
 function moodOf(id){return id<22?id*37%360:[25,200,265,140][(id-22)/14|0]}
 function setMood(id){mood=hue+(((moodOf(id)-hue)%360)+540)%360-180;mt=0;saveState()}
@@ -445,13 +483,13 @@ function pick(d){
   $('#note').textContent='';card.classList.remove('flip');
   setTimeout(()=>{
     fr.innerHTML=face(id);fr.firstChild.style.transform=rev?'rotate(180deg)':'';
-    d.dataset.id=id;d.dataset.rev=rev?'1':'';card.classList.add('flip');setMood(id);
+    d.dataset.id=id;d.dataset.rev=rev?'1':'';card.classList.add('flip');setMood(id);logCard(d,id,rev);
     sfx.flip();buzz(15);
     say(d);setTimeout(()=>{d.busy=false},reduce?0:700);
   },wait);
 }
 function build(n){
-  spread=n;shuffle();
+  spread=n;curRead=null;shuffle();
   const sp=$('#spread');sp.className='s'+n;sp.innerHTML='';$('#note').textContent='';
   document.querySelectorAll('#picker button').forEach(b=>b.classList.toggle('on',+b.dataset.n===n));
   LAY[n].forEach((p,i)=>{
@@ -928,6 +966,172 @@ sc.addEventListener('pointerup',e=>{
   sdn=null;
 });
 sc.addEventListener('pointercancel',()=>{sdn=null});
+
+/* ---------- Logbog: kort og brændte sigiler med billeder, lyd og video. Alt bliver på telefonen. ---------- */
+/* Sigilens bogstaver gemmes aldrig. Mærket siger kun, at en sigil blev brændt, og hvornår. */
+let ldb=null,lfail=false,entries=[],logDirty=true,openId=null,attachTarget=null,rec=null,recTarget,logSeq=0,urls=[];
+const IC={
+  image:'<svg class="ic" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M8.5 7l1.2-2.5h4.6L15.5 7"/></svg>',
+  audio:'<svg class="ic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg>',
+  video:'<svg class="ic" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M10.5 9.5v5l4-2.5z"/></svg>',
+  flame:'<svg class="ic big" viewBox="0 0 24 24"><path d="M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z"/></svg>',
+  del:'<svg viewBox="0 0 24 24" width="24" height="24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg>'
+};
+const logHue=()=>Math.round(((mood===null?hue:mood)%360+360)%360);
+function moonPhase(ts){const d=(ts/86400000+2440587.5-2451550.1)/29.530588853;return d-Math.floor(d)}
+function moonSvg(p,size){
+  const r=10,wane=p>.5,q=wane?1-p:p,k=Math.cos(2*Math.PI*q),rx=(Math.abs(k)*r).toFixed(2);
+  return `<svg viewBox="-12 -12 24 24" width="${size}" height="${size}"><circle r="${r}" style="fill:none;stroke:currentColor;stroke-width:1;opacity:.5"/><path d="M0 -${r}A${r} ${r} 0 0 1 0 ${r}A${rx} ${r} 0 0 ${k>0?0:1} 0 -${r}Z" style="fill:currentColor;stroke:none"${wane?' transform="scale(-1 1)"':''}/></svg>`;
+}
+
+/* Lager */
+function logOpen(){
+  return new Promise(res=>{
+    try{
+      const r=indexedDB.open('kaosalter-log',1);
+      r.onupgradeneeded=()=>r.result.createObjectStore('e',{keyPath:'id'});
+      r.onsuccess=()=>{ldb=r.result;res()};
+      r.onerror=r.onblocked=()=>{lfail=true;res()};
+    }catch(e){lfail=true;res()}
+  });
+}
+function logLoad(){
+  if(!ldb)return Promise.resolve();
+  return new Promise(res=>{
+    const q=ldb.transaction('e').objectStore('e').getAll();
+    q.onsuccess=()=>{const have=new Set(entries.map(e=>e.id));entries=entries.concat(q.result.filter(e=>!have.has(e.id))).sort((a,b)=>b.t-a.t);res()};
+    q.onerror=()=>res();
+  });
+}
+function logPut(e){
+  if(!ldb)return;
+  try{ldb.transaction('e','readwrite').objectStore('e').put(e)}catch(_){}
+  if(!logPut.asked){logPut.asked=1;try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(_){}}
+}
+function logDel(id){if(ldb)try{ldb.transaction('e','readwrite').objectStore('e').delete(id)}catch(_){}}
+function logAdd(e){
+  e.id=Date.now()*1000+(logSeq++%1000);entries.unshift(e);logPut(e);logDirty=true;
+  if(secIdx===7)logRender();
+  return e;
+}
+
+/* Hændelser */
+function logSigil(){logAdd({k:'sigil',t:Date.now(),h:logHue()})}
+function logCard(d,id,rev){
+  const now=Date.now(),pos=[...$('#spread').children].indexOf(d);
+  if(spread===1||!curRead||now-curRead.t>20*60e3)curRead=logAdd({k:'kort',t:now,h:logHue(),n:spread,cards:[]});
+  curRead.cards.push({id,rev,pos});logPut(curRead);logDirty=true;
+  if(secIdx===7)logRender();
+}
+
+/* Tegning */
+function markBody(e){
+  let out='';
+  if(e.k==='kort')out+='<span class="thumbs">'+[...e.cards].sort((a,b)=>a.pos-b.pos).map(c=>`<span${c.rev?' style="transform:rotate(180deg)"':''}>${face(c.id)}</span>`).join('')+'</span>';
+  if(e.k==='sigil')out+=IC.flame;
+  if(e.att&&e.att.length)out+='<span class="att">'+e.att.map(a=>IC[a.type]).join('')+'</span>';
+  return out;
+}
+function detailHtml(e){
+  const names=e.k==='kort'?'<ul class="names">'+[...e.cards].sort((a,b)=>a.pos-b.pos).map(c=>`<li>${e.n===10?(c.pos+1)+' · ':''}${cname(c.id)}${c.rev?' (omvendt)':''}</li>`).join('')+'</ul>':'';
+  const live=rec&&recTarget===e.id?' live':'';
+  return `<div class="det">${names}<div class="media"></div><div class="tools">`+
+    `<button data-act="file" aria-label="Tilføj billede, lyd eller video" title="Tilføj billede, lyd eller video">${$('#bogfoto').innerHTML}</button>`+
+    `<button class="recbtn${live}" data-act="rec" aria-label="Optag lyd" title="Optag lyd">${$('#bogrec').innerHTML}</button>`+
+    `<button data-act="del" aria-label="Slet" title="Slet">${IC.del}</button></div></div>`;
+}
+function logRender(){
+  logDirty=false;urls.forEach(u=>URL.revokeObjectURL(u));urls=[];
+  const yr=new Date().getFullYear();let out=lfail?'<p class="warn">Ingen lagring i denne browser</p>':'',day='';
+  for(const e of entries){
+    const d=new Date(e.t),open=e.id===openId;
+    if(d.toDateString()!==day){day=d.toDateString();out+=`<div class="day">${d.toLocaleDateString('da-DK',d.getFullYear()===yr?{day:'numeric',month:'long'}:{day:'numeric',month:'long',year:'numeric'})}</div>`}
+    out+=`<article class="e" data-id="${e.id}" style="--c:hsl(${e.h==null?285:e.h},80%,66%)">`+
+      `<div class="mark" role="button" tabindex="0" aria-expanded="${open}"><span class="when">${moonSvg(moonPhase(e.t),16)}<span>${d.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'})}</span></span><span class="body">${markBody(e)}</span></div>`+
+      (open?detailHtml(e):'')+'</article>';
+  }
+  const box=$('#bogliste');box.innerHTML=out;
+  const e=entries.find(x=>x.id===openId),m=box.querySelector('.media');
+  if(e&&m)(e.att||[]).forEach(a=>{
+    const u=URL.createObjectURL(a.blob);urls.push(u);
+    const n=document.createElement(a.type==='image'?'img':a.type);n.src=u;
+    if(a.type!=='image')n.controls=true;
+    if(a.type==='video')n.playsInline=true;
+    m.appendChild(n);
+  });
+}
+function logOpenPage(){
+  $('#bogmoon').innerHTML=moonSvg(moonPhase(Date.now()),56);
+  if(logDirty)logRender();
+}
+
+/* Vedhæftning */
+function attach(id,a){
+  if(id==null){const e=logAdd({k:'frit',t:Date.now(),h:logHue(),att:[a]});openId=e.id;logRender();return}
+  const e=entries.find(x=>x.id===id);if(!e)return;
+  (e.att=e.att||[]).push(a);logPut(e);logRender();
+}
+async function shrink(file){
+  try{
+    const bm=await createImageBitmap(file),s=Math.min(1,1600/Math.max(bm.width,bm.height));
+    const c=document.createElement('canvas');c.width=Math.round(bm.width*s);c.height=Math.round(bm.height*s);
+    c.getContext('2d').drawImage(bm,0,0,c.width,c.height);
+    return await new Promise(r=>c.toBlob(b=>r(b||file),'image/jpeg',.82));
+  }catch(e){return file}
+}
+function nope(b){if(!b)return;b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake');buzz([20,40,20])}
+$('#pickfile').addEventListener('change',async ev=>{
+  const f=ev.target.files[0];ev.target.value='';if(!f)return;
+  const type=f.type.startsWith('image/')?'image':f.type.startsWith('audio/')?'audio':f.type.startsWith('video/')?'video':null;
+  if(!type||(type!=='image'&&f.size>40e6)){nope($('#bogfoto'));return}
+  attach(attachTarget,{type,blob:type==='image'?await shrink(f):f});
+});
+function setRec(){
+  document.querySelectorAll('#bog .recbtn').forEach(b=>{
+    const art=b.closest('.e'),mine=recTarget===null?b.id==='bogrec':!!art&&+art.dataset.id===recTarget;
+    b.classList.toggle('live',!!rec&&mine);
+  });
+}
+async function recToggle(id,btn){
+  if(rec){rec.stop();return}
+  try{
+    const st=await navigator.mediaDevices.getUserMedia({audio:true});
+    const mt=window.MediaRecorder?['audio/webm;codecs=opus','audio/mp4','audio/aac'].find(t=>MediaRecorder.isTypeSupported(t)):null;
+    const mr=new MediaRecorder(st,mt?{mimeType:mt}:undefined),chunks=[];
+    mr.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+    const cap=setTimeout(()=>{if(rec)rec.stop()},300000);
+    mr.onstop=()=>{
+      clearTimeout(cap);st.getTracks().forEach(t=>t.stop());rec=null;recTarget=undefined;setRec();
+      const b=new Blob(chunks,{type:mr.mimeType||mt||'audio/mp4'});if(b.size)attach(id,{type:'audio',blob:b});
+    };
+    mr.start();rec=mr;recTarget=id;setRec();buzz(12);
+  }catch(e){nope(btn)}
+}
+function delTap(id,b){
+  if(b.classList.contains('sure')){entries=entries.filter(e=>e.id!==id);logDel(id);openId=null;logRender();return}
+  b.classList.add('sure');setTimeout(()=>b.classList.remove('sure'),3000);
+}
+
+/* Knapper */
+$('#bogfoto').addEventListener('click',()=>{attachTarget=null;$('#pickfile').click()});
+$('#bogrec').addEventListener('click',ev=>recToggle(null,ev.currentTarget));
+const bl=$('#bogliste');
+function togglePanel(art){const id=+art.dataset.id;openId=openId===id?null:id;logRender()}
+bl.addEventListener('click',ev=>{
+  const art=ev.target.closest('.e');if(!art)return;
+  const act=ev.target.closest('[data-act]'),id=+art.dataset.id;
+  if(act){
+    if(act.dataset.act==='file'){attachTarget=id;$('#pickfile').click()}
+    else if(act.dataset.act==='rec')recToggle(id,act);
+    else delTap(id,act);
+    return;
+  }
+  if(ev.target.closest('.mark'))togglePanel(art);
+});
+bl.addEventListener('keydown',ev=>{
+  if((ev.key==='Enter'||ev.key===' ')&&ev.target.classList.contains('mark')){ev.preventDefault();togglePanel(ev.target.closest('.e'))}
+});
+logOpen().then(logLoad).then(()=>{logDirty=true;if(secIdx===7)logRender()});
 
 /* ---------- Start ---------- */
 function layout(){W=fit(cv,cx);S=fit(sg,sx);fitFire();KW=fit(kc,kx);fitSlab();drawSigil()}
