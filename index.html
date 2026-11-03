@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#160c20">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -88,7 +91,7 @@ button.cold:not(:disabled){opacity:.55}
 #burn:not(.cold):not(:disabled){border-color:var(--oct);box-shadow:0 0 14px var(--oct)}
 
 @media (prefers-reduced-motion:reduce){
-  input.shake,#mic.shake,#bog button.shake,.recbtn.live,.die.roll,.die.land svg{animation:none}
+  input.shake,#mic.shake,#bog button.shake,#laas.shake #laasstar,.recbtn.live,.die.roll,.die.land svg{animation:none}
   #sigil.burn{transition-duration:.01s}
   .card{transition:none}
 }
@@ -105,6 +108,22 @@ button.cold:not(:disabled){opacity:.55}
 #posinfo li b{font-weight:400;border:1px solid var(--oct);border-radius:50%;width:1.5rem;height:1.5rem;display:grid;place-items:center;font-size:.8rem}
 #posinfo li span strong{font-weight:400;letter-spacing:.06em;text-transform:uppercase;font-size:.85rem;display:block}
 .pos{position:absolute;left:0;right:0;bottom:7%;text-align:center;font-style:normal;font-size:clamp(.7rem,2.6vw,.95rem);color:var(--oct);opacity:.8;text-shadow:0 0 6px var(--oct)}
+/* Lås */
+[hidden]{display:none!important}
+#bog.locked>:not(#laas):not(#bogmoon){display:none}
+#laas{width:min(100%,22rem);display:flex;flex-direction:column;align-items:center;gap:1rem;margin-top:1rem}
+#laas[hidden]{display:none}
+#laasstar{width:min(80%,15rem);overflow:visible;touch-action:manipulation}
+#laasstar g{cursor:pointer;color:var(--oct);-webkit-tap-highlight-color:transparent}
+#laasstar g:focus-visible{outline:none}
+#laasstar g:focus-visible path{stroke-width:4}
+#laasstar path{fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px var(--oct));transition:stroke-width .15s}
+#laasstar circle{fill:transparent}
+#laasstar g.hit path{stroke-width:5;filter:drop-shadow(0 0 12px var(--oct))}
+#laasdots{display:flex;gap:.7rem}
+#laasdots i{width:10px;height:10px;border-radius:50%;border:1px solid var(--oct)}
+#laasdots i.on{background:var(--oct);box-shadow:0 0 8px var(--oct)}
+#laas.shake #laasstar{animation:shake .35s}
 /* Logbog */
 #bog{height:100dvh;min-height:0;justify-content:flex-start;gap:1rem;overflow-y:auto;touch-action:pan-y;padding-top:calc(3.4rem + env(safe-area-inset-top));padding-bottom:calc(3rem + env(safe-area-inset-bottom))}
 #bogmoon{color:var(--oct);filter:drop-shadow(0 0 10px var(--oct));line-height:0}
@@ -178,6 +197,16 @@ button.cold:not(:disabled){opacity:.55}
   <div class="row">
     <button id="bogfoto" aria-label="Tilføj billede, lyd eller video" title="Tilføj billede, lyd eller video"><svg viewBox="0 0 24 24" width="24" height="24"><rect x="3" y="7" width="18" height="12" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M8.5 7l1.2-2.5h4.6L15.5 7"/></svg></button>
     <button id="bogrec" class="recbtn" aria-label="Optag lyd" title="Optag lyd"><svg viewBox="0 0 24 24" width="24" height="24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg></button>
+    <button id="boglas" aria-label="Lås logbogen (hold inde for at ændre låsen)" title="Lås (hold inde for at ændre)"><svg viewBox="0 0 24 24" width="24" height="24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
+  </div>
+  <div id="laas" hidden>
+    <svg id="laasstar" viewBox="-60 -60 120 120" role="group" aria-label="Tryk på pilene"></svg>
+    <div id="laasdots"><i></i><i></i><i></i><i></i></div>
+    <p id="laastekst" class="warn"></p>
+    <div class="row">
+      <button id="laasstop" hidden aria-label="Fortryd" title="Fortryd"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <button id="laasfri" hidden aria-label="Fjern låsen" title="Fjern låsen"><svg viewBox="0 0 24 24" width="24" height="24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/></svg></button>
+    </div>
   </div>
   <div id="bogliste"></div>
   <input type="file" id="pickfile" accept="image/*,audio/*,video/*" hidden>
@@ -187,7 +216,7 @@ button.cold:not(:disabled){opacity:.55}
 /* Kaosalter: ét alter til telefonen, otte sider der ruller lodret.
    Sider: kaossfære, sigil, tarot, terninger, kaoskompas, tre ord, skifer, logbog.
    Delt tilstand: ladning (fra tryk og stemme), stemning (sidste kort), terningernes ændringer
-   (gemmes i localStorage), sidste sigils bogstaver (farver ordene) og logbogen (IndexedDB, kun på telefonen).
+   (gemmes i localStorage), sidste sigils bogstaver (farver ordene) og logbogen (IndexedDB, kun på telefonen, med fire-tryks-lås).
    Rækkefølge: indstillinger, kaossfære, sigil, ild, fuldskærm og sider, tarot, haptik, lyd,
    stemme, terninger, kaoskompas, tre ord, skifer, logbog, start. */
 (()=>{
@@ -237,7 +266,7 @@ function draw(t){
   cx.globalCompositeOperation='source-over';
 
   for(let i=ripples.length-1;i>=0;i--){
-    const age=t-ripples[i];
+    const age=Math.max(0,t-ripples[i]);
     if(age>1.3){ripples.splice(i,1);continue}
     cx.strokeStyle='hsla('+(hue%360)+',85%,70%,'+(.55*(1-age/1.3))+')';
     cx.lineWidth=2;
@@ -422,7 +451,7 @@ addEventListener('click',()=>{
 });
 const secs=[...document.querySelectorAll('section')],dots=[...document.querySelectorAll('#dots button')];
 dots.forEach((b,i)=>b.addEventListener('click',()=>secs[i].scrollIntoView({behavior:reduce?'auto':'smooth'})));
-const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){dots.forEach((b,i)=>b.classList.toggle('on',secs[i]===e.target));secIdx=secs.indexOf(e.target);document.body.classList.toggle('slab',secIdx===6);if(secIdx===7)logOpenPage()}}),{threshold:.6});
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){dots.forEach((b,i)=>b.classList.toggle('on',secs[i]===e.target));secIdx=secs.indexOf(e.target);document.body.classList.toggle('slab',secIdx===6);if(secIdx===7)logOpenPage();else leftAt=Date.now()}}),{threshold:.6});
 secs.forEach(x=>io.observe(x));
 
 /* ---------- Tarot ---------- */
@@ -1041,7 +1070,9 @@ function detailHtml(e){
     `<button data-act="del" aria-label="Slet" title="Slet">${IC.del}</button></div></div>`;
 }
 function logRender(){
-  logDirty=false;urls.forEach(u=>URL.revokeObjectURL(u));urls=[];
+  urls.forEach(u=>URL.revokeObjectURL(u));urls=[];
+  if(locked||lmode!=='enter'){$('#bogliste').innerHTML='';logDirty=true;return}
+  logDirty=false;
   const yr=new Date().getFullYear();let out=lfail?'<p class="warn">Ingen lagring i denne browser</p>':'',day='';
   for(const e of entries){
     const d=new Date(e.t),open=e.id===openId;
@@ -1062,6 +1093,7 @@ function logRender(){
 }
 function logOpenPage(){
   $('#bogmoon').innerHTML=moonSvg(moonPhase(Date.now()),56);
+  if(lockHash&&!locked&&Date.now()-leftAt>LOCK_AFTER)lockNow();
   if(logDirty)logRender();
 }
 
@@ -1133,11 +1165,79 @@ bl.addEventListener('keydown',ev=>{
 });
 logOpen().then(logLoad).then(()=>{logDirty=true;if(secIdx===7)logRender()});
 
+/* ---------- Lås til logbogen: fire tryk på pilene i korset ---------- */
+/* En let lås mod nysgerrige blikke, ikke kryptering. Glemmer du mønstret: åbn siden med #nulstil-laas bagest i adressen.
+   Det fjerner låsen, men rører ikke logbogen. */
+const LK='kaosalter.lock',LOCK_AFTER=120000;
+let lockHash=null;
+function clearLock(){lockHash=null;try{localStorage.removeItem(LK)}catch(e){}if(location.hash==='#nulstil-laas')history.replaceState(null,'',location.pathname+location.search)}
+if(location.hash==='#nulstil-laas')clearLock();else try{lockHash=localStorage.getItem(LK)}catch(e){}
+let locked=!!lockHash,lmode='enter',lseq=[],lfirst=null,leftAt=0,hiddenAt=0;
+const lockOf=seq=>{let h=5381;for(const c of 'kaos'+seq.join(''))h=((h<<5)+h+c.charCodeAt(0))>>>0;return String(h)};
+const laas=$('#laas'),lstar=$('#laasstar'),ldots=[...document.querySelectorAll('#laasdots i')];
+lstar.innerHTML=[...Array(8)].map((_,i)=>`<g data-i="${i}" role="button" tabindex="0" aria-label="Pil ${i+1}" transform="rotate(${i*45})"><circle cx="0" cy="-36" r="15"/><path d="M0 -8V-48M-7 -40L0 -49L7 -40"/></g>`).join('');
+function lockUI(){
+  const busy=locked||lmode!=='enter';
+  $('#bog').classList.toggle('locked',busy);laas.hidden=!busy;
+  $('#laastekst').textContent=lmode==='set1'?'Vælg fire pile':lmode==='set2'?'Gentag':'';
+  $('#laasstop').hidden=lmode==='enter';$('#laasfri').hidden=lmode==='enter'||!lockHash;
+  ldots.forEach(d=>d.classList.remove('on'));
+  logDirty=true;if(secIdx===7)logRender();
+}
+function lockNow(){if(!lockHash)return;locked=true;lmode='enter';lseq=[];lockUI()}
+function startSetup(){lmode='set1';lseq=[];lockUI()}
+function lockShake(){laas.classList.remove('shake');void laas.offsetWidth;laas.classList.add('shake');buzz([20,40,20])}
+function lockDone(seq){
+  if(lmode==='enter'){
+    if(lockOf(seq)===lockHash){locked=false;buzz(15);lockUI()}else lockShake();
+  }else if(lmode==='set1'){lfirst=lockOf(seq);lmode='set2';lockUI()}
+  else if(lockOf(seq)===lfirst){
+    lockHash=lfirst;try{localStorage.setItem(LK,lockHash)}catch(e){}
+    lmode='enter';locked=false;buzz([30,40,60]);lockUI();
+  }else{lockShake();lmode='set1';lockUI()}
+}
+function lockTap(g){
+  g.classList.add('hit');setTimeout(()=>g.classList.remove('hit'),160);
+  sfx.tick();buzz(8);lseq.push(+g.dataset.i);
+  ldots.forEach((d,i)=>d.classList.toggle('on',i<lseq.length));
+  if(lseq.length<4)return;
+  const seq=lseq;lseq=[];setTimeout(()=>lockDone(seq),200);
+}
+lstar.addEventListener('click',ev=>{const g=ev.target.closest('g[data-i]');if(g)lockTap(g)});
+lstar.addEventListener('keydown',ev=>{const g=ev.target.closest('g[data-i]');if(g&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();lockTap(g)}});
+$('#laasstop').addEventListener('click',()=>{lmode='enter';lseq=[];lockUI()});
+$('#laasfri').addEventListener('click',()=>{lockHash=null;try{localStorage.removeItem(LK)}catch(e){}lmode='enter';locked=false;lockUI()});
+const lockBtn=$('#boglas');let lockTimer=0,lockLong=false;
+lockBtn.addEventListener('pointerdown',()=>{lockLong=false;lockTimer=setTimeout(()=>{lockLong=true;buzz(20);startSetup()},700)});
+['pointerup','pointerleave','pointercancel'].forEach(t=>lockBtn.addEventListener(t,()=>clearTimeout(lockTimer)));
+lockBtn.addEventListener('contextmenu',ev=>ev.preventDefault());
+lockBtn.addEventListener('click',()=>{if(lockLong){lockLong=false;return}lockHash?lockNow():startSetup()});
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)hiddenAt=Date.now();
+  else if(lockHash&&!locked&&hiddenAt&&Date.now()-hiddenAt>LOCK_AFTER)lockNow();
+});
+addEventListener('hashchange',()=>{if(location.hash==='#nulstil-laas'){clearLock();lmode='enter';locked=false;lockUI()}});
+lockUI();
+
+/* ---------- Skærmen bliver tændt, mens alteret er åbent ---------- */
+let wake=null;
+async function keepAwake(){
+  try{
+    if(!navigator.wakeLock||document.hidden||wake)return;
+    wake=await navigator.wakeLock.request('screen');
+    wake.addEventListener('release',()=>{wake=null});
+  }catch(e){wake=null}
+}
+addEventListener('pointerdown',keepAwake,{passive:true});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)keepAwake()});
+keepAwake();
+
 /* ---------- Start ---------- */
 function layout(){W=fit(cv,cx);S=fit(sg,sx);fitFire();KW=fit(kc,kx);fitSlab();drawSigil()}
 addEventListener('resize',layout);
 layout();
 requestAnimationFrame(frame);
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();
 </script>
 </body>
