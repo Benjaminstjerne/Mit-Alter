@@ -1,6 +1,6 @@
 /* Kaosalter: åbner også uden net. Henter altid det nyeste, når der er net, og bruger kopien, når der ikke er. */
-const C = 'kaosalter-v1';
-const ASSETS = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
+const C = 'kaosalter-v2';
+const ASSETS = ['./', 'index.html', 'mono.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(C).then(c => c.addAll(ASSETS).catch(() => {})).then(() => self.skipWaiting()));
 });

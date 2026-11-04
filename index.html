@@ -2,6 +2,7 @@
 <html lang="da">
 <head>
 <meta charset="utf-8">
+<script>try{if(location.hash==='#farve'){localStorage.setItem('kaosalter.look','farve');history.replaceState(null,'',location.pathname+location.search)}else if(localStorage.getItem('kaosalter.look')==='mono')location.replace('mono.html'+location.hash)}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#160c20">
 <link rel="manifest" href="manifest.webmanifest">
@@ -20,12 +21,16 @@ body{margin:0;min-height:100vh;color:var(--ink);font:1.075rem/1.65 "Palatino Lin
 section{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem 1.25rem;scroll-snap-align:start;scroll-snap-stop:always}
 canvas:focus-visible,button:focus-visible,input:focus-visible,.deck:focus-visible,#hand:focus-visible{outline:2px solid var(--oct);outline-offset:4px}
 
+body{animation:look-in .7s ease-out}
+@keyframes look-in{from{opacity:0}}
+html.leaving body{transition:opacity .4s;opacity:0}
+
 /* Knapper og felter */
-button{display:inline-grid;place-items:center;min-width:48px;min-height:44px;padding:.55rem 1.1rem;font:inherit;color:var(--oct);background:transparent;border:1px solid var(--dim);border-radius:3px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-button.main{background:var(--wax);border-color:var(--wax);color:var(--ink)}
+button{display:inline-grid;place-items:center;min-width:48px;min-height:44px;padding:.55rem 1.1rem;font:inherit;color:var(--oct);background:transparent;border:0;border-radius:0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:color .2s,opacity .2s,transform .15s}
+button.main{color:#e5645e;filter:drop-shadow(0 0 8px #b0342f)}
 button:disabled{opacity:.4;cursor:default}
 button:not(.die) svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}   /* alle ikoner */
-button:not(:disabled):active{border-color:var(--oct)}
+button:not(:disabled):active{color:#fff;transform:scale(.88)}
 input{width:min(100%,24rem);margin:.4rem 0 1rem;padding:.6rem 0;font:inherit;color:var(--oct);caret-color:var(--oct);text-shadow:0 0 8px var(--oct);background:transparent;border:0;border-bottom:1px solid var(--oct);border-radius:0}
 input.shake,#mic.shake,#bog button.shake{animation:shake .35s}
 @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
@@ -52,7 +57,8 @@ input.shake,#mic.shake,#bog button.shake{animation:shake .35s}
 
 /* Tarot */
 #picker{display:flex;gap:.6rem;margin-bottom:1rem}
-#picker button.on{border-color:var(--oct)}
+#picker button{color:var(--dim)}
+#picker button.on{color:var(--oct);filter:drop-shadow(0 0 8px var(--oct))}
 #spread{--cw:min(62vw,15rem,calc(48dvh*.588));display:grid;gap:.5rem;justify-content:center;grid-auto-rows:calc(var(--cw)*1.7)}
 #spread.s1{grid-template-columns:var(--cw)}
 #spread.s3{--cw:min(calc((100vw - 3rem)/3.1),9rem,calc(40dvh*.588));grid-template-columns:repeat(3,var(--cw))}
@@ -88,10 +94,10 @@ input.shake,#mic.shake,#bog button.shake{animation:shake .35s}
 #dots,#mute,#mic{transition:opacity .4s}
 body.slab #dots,body.slab #mute,body.slab #mic{opacity:0;pointer-events:none}
 button.cold:not(:disabled){opacity:.55}
-#burn:not(.cold):not(:disabled){border-color:var(--oct);box-shadow:0 0 14px var(--oct)}
+#burn:not(.cold):not(:disabled){color:var(--oct);filter:drop-shadow(0 0 10px var(--oct))}
 
 @media (prefers-reduced-motion:reduce){
-  input.shake,#mic.shake,#bog button.shake,#laas.shake #laasstar,.recbtn.live,.die.roll,.die.land svg{animation:none}
+  input.shake,#mic.shake,#bog button.shake,#laas.shake #laasstar,.recbtn.live,.tools button.sure,.die.roll,.die.land svg{animation:none}
   #sigil.burn{transition-duration:.01s}
   .card{transition:none}
 }
@@ -150,10 +156,11 @@ button.cold:not(:disabled){opacity:.55}
 .media img,.media video{display:block;width:100%;height:auto;border-radius:4px;border:1px solid var(--dim)}
 .media audio{width:100%}
 .tools{display:flex;gap:.5rem}
-.tools button.sure{border-color:var(--wax);color:var(--ink);background:var(--wax)}
-.recbtn.live{color:var(--ink);background:var(--wax);border-color:var(--wax);animation:pulse 1.1s ease-in-out infinite}
-@keyframes pulse{50%{box-shadow:0 0 16px var(--wax)}}
-@media (prefers-reduced-motion:reduce){#posinfo{transition:none}}
+.tools button.sure{color:#e5645e;filter:drop-shadow(0 0 8px #b0342f);animation:blink .5s steps(2) infinite}
+@keyframes blink{50%{opacity:.35}}
+.recbtn.live{color:#e5645e;filter:drop-shadow(0 0 8px #b0342f);animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.4}}
+@media (prefers-reduced-motion:reduce){#posinfo{transition:none}body{animation:none}html.leaving body{transition:none}}
 </style>
 </head>
 <body>
@@ -222,6 +229,7 @@ button.cold:not(:disabled){opacity:.55}
 (()=>{
 const $=s=>document.querySelector(s);
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const MONO=false;   /* denne fil er farvet */
 const root=document.documentElement;
 
 /* ---------- Indstillinger: de tal, du mest sandsynligt vil skrue på ---------- */
@@ -758,7 +766,19 @@ function resetDice(){
   sfx.reset();buzz([70,50,70,50,220]);
   saveState();
 }
+/* To firere skifter mellem det farvede alter (index.html) og det sort-hvide (mono.html). Begge deler lager og logbog. */
+function switchLook(){
+  const to=MONO?'farve':'mono',url=MONO?'index.html':'mono.html';
+  fetch(url,{cache:'no-cache'}).then(r=>{
+    if(!r.ok)throw 0;
+    try{localStorage.setItem('kaosalter.look',to);sessionStorage.setItem('kaosalter.go','3')}catch(e){}
+    buzz([40,40,120]);sfx.reset();
+    document.documentElement.classList.add('leaving');
+    setTimeout(()=>location.replace(url),reduce?0:420);
+  }).catch(()=>{buzz(10)});   /* mangler den anden fil, bliver alteret, hvor det er */
+}
 function effect(a,b){
+  if(a===4&&b===4){switchLook();return}
   if((a===1&&b===1)||(a===6&&b===6)){resetDice();return}
   const i=b-1;
   if(a===1){if(!reduce){base=[-1.6,-.6,-.1,.1,.6,1.6][i];vel+=base*3}}
@@ -1237,6 +1257,7 @@ keepAwake();
 function layout(){W=fit(cv,cx);S=fit(sg,sx);fitFire();KW=fit(kc,kx);fitSlab();drawSigil()}
 addEventListener('resize',layout);
 layout();
+try{const go=sessionStorage.getItem('kaosalter.go');if(go!==null){sessionStorage.removeItem('kaosalter.go');secs[+go].scrollIntoView({behavior:'auto'})}}catch(e){}
 requestAnimationFrame(frame);
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();
