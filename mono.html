@@ -61,10 +61,13 @@ input.shake,#mic.shake,#bog button.shake{animation:shake .35s}
 #picker{display:flex;gap:.6rem;margin-bottom:1rem}
 #picker button{color:var(--dim)}
 #picker button.on{color:var(--ink)}
+#stemme{color:var(--dim);touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#stemme.live{color:#fff}
 #spread{--cw:min(62vw,15rem,calc(48dvh*.588));display:grid;gap:.5rem;justify-content:center;grid-auto-rows:calc(var(--cw)*1.7)}
 #spread.s1{grid-template-columns:var(--cw)}
 #spread.s3{--cw:min(calc((100vw - 3rem)/3.1),9rem,calc(40dvh*.588));grid-template-columns:repeat(3,var(--cw))}
 #spread.s10{--cw:min(calc((100vw - 3rem)/4.6),6rem,calc((100dvh - 14rem)/7.2));grid-template-columns:repeat(4,var(--cw));gap:.35rem}
+#spread.s4{--cw:min(calc((100vw - 3rem)/2.5),8.5rem,calc((100dvh - 15rem)/3.7));grid-template-columns:repeat(2,var(--cw))}
 .deck{perspective:1200px;width:var(--cw);height:calc(var(--cw)*1.7);cursor:pointer;-webkit-tap-highlight-color:transparent}
 .deck.x{transform:rotate(90deg);z-index:2}
 .card{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.3,.7,.2,1)}
@@ -182,6 +185,7 @@ button.cold:not(:disabled){opacity:.45}
     <button id="make" class="main" aria-label="Lav sigil" title="Lav sigil"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/></svg></button>
     <button id="save" disabled aria-label="Gem billede" title="Gem billede"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg></button>
     <button id="burn" disabled aria-label="Brænd" title="Brænd"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z"/></svg></button>
+    <button id="stemme" aria-label="Brændt stemme: hold nede og tal" title="Brændt stemme: hold nede og tal"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z"/><rect x="10.5" y="12" width="3" height="5" rx="1.5"/></svg></button>
   </div>
     <div id="wrap"><canvas id="sigil" aria-label="Din sigil"></canvas><canvas id="fire"></canvas></div>
 </section>
@@ -189,6 +193,7 @@ button.cold:not(:disabled){opacity:.45}
   <div id="picker">
     <button data-n="1" class="on" aria-label="Ét kort"><svg viewBox="0 0 24 24" width="24" height="24"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg></button>
     <button data-n="3" aria-label="Tre kort"><svg viewBox="0 0 24 24" width="24" height="24"><rect x="2" y="6" width="6" height="12" rx="1"/><rect x="9" y="6" width="6" height="12" rx="1"/><rect x="16" y="6" width="6" height="12" rx="1"/></svg></button>
+    <button data-n="4" aria-label="Skyggelægning"><svg viewBox="0 0 24 24" width="24" height="24"><rect x="4" y="2.5" width="7" height="9" rx="1"/><rect x="13" y="2.5" width="7" height="9" rx="1"/><rect x="4" y="12.5" width="7" height="9" rx="1"/><rect x="13" y="12.5" width="7" height="9" rx="1" style="fill:currentColor;fill-opacity:.4"/></svg></button>
     <button data-n="10" aria-label="Keltisk kors"><svg viewBox="0 0 28 24" width="28" height="24"><rect x="8" y="9" width="5" height="6"/><rect x="8" y="2" width="5" height="5"/><rect x="8" y="17" width="5" height="5"/><rect x="1" y="9" width="5" height="6"/><rect x="15" y="9" width="5" height="6"/><rect x="23" y="2" width="4" height="4"/><rect x="23" y="7" width="4" height="4"/><rect x="23" y="12" width="4" height="4"/><rect x="23" y="17" width="4" height="4"/></svg></button>
   </div>
   <div id="spread"></div>
@@ -429,6 +434,59 @@ bb.addEventListener('click',()=>{
   setTimeout(()=>{sg.classList.remove('burn');cur='';drawSigil()},reduce?50:2600);
 });
 
+
+/* ---------- Brændt stemme: tal ind i ilden. Lyden gemmes aldrig; kun et mærke i logbogen. ---------- */
+const vb=$('#stemme');
+let voxHeld=false,voxBusy=false;
+async function voxStart(){
+  if(voxAn||voxBusy)return;
+  voxBusy=true;
+  try{
+    audio();
+    if(!ac||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('ingen mikrofon');
+    const st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:false,autoGainControl:false}});
+    if(!voxHeld){st.getTracks().forEach(t=>t.stop());voxBusy=false;return}   /* sluppet, før tilladelsen kom */
+    if(ac.state==='suspended')await ac.resume();
+    voxStream=st;voxSrc=ac.createMediaStreamSource(st);
+    const an=ac.createAnalyser();an.fftSize=1024;an.smoothingTimeConstant=0;
+    voxSrc.connect(an);                       /* kun til analysatoren; aldrig til højttaler, aldrig til optagelse */
+    voxBuf=new Float32Array(an.fftSize);voxFloor=.004;voxLvl=0;voxPeak=0;voxT0=performance.now();voxAn=an;
+    vb.classList.add('live');buzz(12);
+    if(!voxHeld)voxStop();
+  }catch(e){voxHeld=false;nope(vb)}
+  voxBusy=false;
+}
+function voxStop(){
+  if(!voxAn)return;
+  const held=performance.now()-voxT0,spoke=voxPeak>.2;
+  if(voxStream)voxStream.getTracks().forEach(t=>t.stop());
+  try{if(voxSrc)voxSrc.disconnect()}catch(e){}
+  voxAn=voxSrc=voxStream=voxBuf=null;vb.classList.remove('live');
+  if(held>=800&&spoke){
+    voxEnd=performance.now()+1100;flare=1;
+    sfx.burn();buzz(burnPat());
+    logAdd({k:'stemme',t:Date.now(),h:logHue()});
+  }
+}
+function voxStep(now){
+  if(voxAn){
+    voxAn.getFloatTimeDomainData(voxBuf);
+    let s=0;for(let i=0;i<voxBuf.length;i++)s+=voxBuf[i]*voxBuf[i];
+    const rms=Math.sqrt(s/voxBuf.length);
+    voxFloor+=(rms-voxFloor)*(rms<voxFloor?.3:.0015);
+    const v=Math.min(1,Math.max(0,(rms-voxFloor*TUNE.micMargin-.0015)*TUNE.micGain));
+    voxLvl+=(v-voxLvl)*.35;voxPeak=Math.max(voxPeak,voxLvl);
+    flare=Math.max(flare,Math.min(1,voxLvl*1.3));
+  }else voxLvl*=.8;
+  if(now<voxEnd)flare=Math.max(flare,.9);
+}
+vb.addEventListener('pointerdown',e=>{e.preventDefault();voxHeld=true;try{vb.setPointerCapture(e.pointerId)}catch(_){}voxStart()});
+['pointerup','pointercancel'].forEach(t=>vb.addEventListener(t,()=>{voxHeld=false;voxStop()}));
+vb.addEventListener('contextmenu',e=>e.preventDefault());
+vb.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!e.repeat){e.preventDefault();voxHeld=true;voxStart()}});
+vb.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter'){voxHeld=false;voxStop()}});
+vb.addEventListener('blur',()=>{voxHeld=false;voxStop()});
+
 /* ---------- Ild: pixelkunst ----------
    En lille varmesimulation på et groft gitter (ca. 6 px pr. pixel). Varmen stiger op fra gløderne i bunden,
    køles af tilfældigt og driver med vinden. Den tegnes i fem grå trin med ordnet dithering (Bayer 4×4),
@@ -439,6 +497,7 @@ const PX=4.5;                                   /* størrelse på én ild-pixel 
 const BAY=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(v=>(v+.5)/16);
 const SHADE=[0,72,128,190,236,255];           /* grå trin, fra sort til hvid */
 let FW=0,FH=0,GW=0,GH=0,heat=null,fimg=null,fbuf=null,fbx=null,facc=0,burnUntil=0,burnPts=[],flare=0;
+let voxAn=null,voxBuf=null,voxStream=null,voxSrc=null,voxLvl=0,voxFloor=.004,voxT0=0,voxPeak=0,voxEnd=0;
 function fitFire(){
   FW=fc.getBoundingClientRect().width;FH=FW*1.25;
   GW=Math.max(24,Math.round(FW/PX));GH=Math.round(GW*1.25);
@@ -453,6 +512,7 @@ function ignite(){
 }
 function spawn(){flare=1}                     /* gnist: et kort pust i gløderne */
 function fireTick(now){
+  voxStep(now);
   const burning=now<burnUntil;
   const wind=Math.sin(fireOff*Math.PI/180)*.55;        /* terningerne bøjer flammen */
   const tall=.34+charge*.3+flare*.2+(fireOff>200?.1:0);
@@ -491,7 +551,7 @@ function fireTick(now){
     }
   }
   /* gnister og tunger, der slår ud af kuglen i tilfældige retninger (mest opad) */
-  const nsp=1+(Math.random()<.5+charge*.5?2:0)+(charge*3|0);
+  const nsp=1+(Math.random()<.5+charge*.5?2:0)+(charge*3|0)+(voxLvl*4|0);
   for(let k=0;k<nsp;k++){
     let th=-Math.PI/2+(Math.random()-.5)*Math.PI*(Math.random()<.35?2:1.1);const len=3+Math.random()*(4+r0*.5);
     let px=mid+Math.cos(th)*r0*.85,py=cy+Math.sin(th)*r0*.85;
@@ -581,12 +641,12 @@ function face(id){
 let arrows='';for(let i=0;i<8;i++)arrows+='<path transform="rotate('+i*45+')" d="M0-12V-52M-8-42L0-54L8-42"/>';
 const BACK='<svg viewBox="0 0 200 340"><rect x="1" y="1" width="198" height="338" rx="2" fill="#050505" stroke="#5c5c5c" stroke-width=".7"/><rect x="9" y="9" width="182" height="322" fill="none" stroke="#5c5c5c" stroke-width=".5" opacity=".5"/><g transform="translate(100 170)" stroke="#bdbdbd" fill="none" stroke-width=".9" stroke-linecap="square" stroke-linejoin="miter">'+arrows+'</g><circle cx="100" cy="170" r="2" fill="#bdbdbd"/></svg>';
 const cname=id=>id<22?MJ[id]:RK[(id-22)%14]+' of '+SU[(id-22)/14|0];
-const LAY={1:[[1,1]],3:[[1,1],[2,1],[3,1]],10:[[2,2],[2,2,1],[2,3],[1,2],[2,1],[3,2],[4,4],[4,3],[4,2],[4,1]]};
+const LAY={1:[[1,1]],3:[[1,1],[2,1],[3,1]],4:[[1,1],[2,1],[1,2],[2,2]],10:[[2,2],[2,2,1],[2,3],[1,2],[2,1],[3,2],[4,4],[4,3],[4,2],[4,1]]};
 let deck=[],spread=1,curRead=null;
 function shuffle(){deck=[...Array(78).keys()];for(let i=77;i>0;i--){const j=Math.random()*(i+1)|0;const t=deck[i];deck[i]=deck[j];deck[j]=t}}
 function moodOf(id){return id<22?id*37%360:[25,200,265,140][(id-22)/14|0]}
 function setMood(id){mood=hue+(((moodOf(id)-hue)%360)+540)%360-180;mt=0;saveState()}
-function say(d){const id=+d.dataset.id;$('#note').textContent=cname(id)+' — '+desc(id)+(d.dataset.rev?' Omvendt: energien er blokeret, vendt indad eller forsinket.':'')}
+function say(d){const id=+d.dataset.id,sp4=spread===4?SK[[...$('#spread').children].indexOf(d)]:'';$('#note').textContent=(sp4?sp4+' — ':'')+cname(id)+' — '+desc(id)+(d.dataset.rev?' Omvendt: energien er blokeret, vendt indad eller forsinket.':'')}
 function pick(d){
   const card=d.firstChild,fr=card.lastChild,flipped=card.classList.contains('flip');
   if(d.busy)return;
@@ -610,7 +670,7 @@ function build(n){
     const d=document.createElement('div');
     d.className='deck'+(p[2]?' x':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Kort');
     d.style.gridColumn=p[0];d.style.gridRow=p[1];
-    d.innerHTML='<div class="card"><div class="face">'+BACK+(n===10?'<i class="pos">'+(i+1)+'</i>':'')+'</div><div class="face front"></div></div>';
+    d.innerHTML='<div class="card"><div class="face">'+BACK+(n===10||n===4?'<i class="pos">'+(i+1)+'</i>':'')+'</div><div class="face front"></div></div>';
     d.addEventListener('click',()=>pick(d));
     d.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick(d)}});
     sp.appendChild(d);
@@ -623,6 +683,10 @@ build(1);
 const POS={
   1:[['Kortet','Svaret på dit spørgsmål, eller dagens kort.']],
   3:[['Fortiden','Det, der ligger bag dig og stadig præger situationen.'],['Nutiden','Det, der er på spil lige nu.'],['Fremtiden','Det, der tegner sig, hvis du går videre som nu.']],
+  4:[['Det, jeg ikke vil se','Det, der ligger lige uden for mit selvbillede. Det, jeg undgår at sige til mig selv.'],
+      ['Hvor jeg lægger det','Hvem eller hvad jeg dømmer eller bliver for meget irriteret over. Det, andre bærer for mig.'],
+      ['Hvad det beskytter','Hvorfor skyggen er der: hvad den holder i sikkerhed, og hvad den har gjort for mig.'],
+      ['Hvad den vil','Hvad skyggen vil, hvis jeg holder op med at kæmpe imod den. Dens gave.']],
   10:[['Kernen','Situationen, som den er lige nu.'],
       ['Det, der krydser','Forhindringen eller kraften, der lægger sig ind over og arbejder imod, eller bare komplicerer.'],
       ['Bunden','Grundlaget under det hele: det, der bærer situationen og ofte er ubevidst.'],
@@ -934,7 +998,7 @@ function kdraw(dt,now){
 kc.addEventListener('click',()=>{kuntil=0;kw+=(Math.random()-.5)*10;sfx.tick();buzz(12)});
 
 /* ---------- Tre ord ---------- */
-const ALL='tærskel spejl aske bro støj nøgle ekko tåge tråd sprække lys sne ild ur dør skygge glimt sand vand sten kompas rod frø hul væg tag stige snor knude klokke nål fjer knogle mælk salt honning jern kobber glas lampe kort bog brev stemme hvisken skrig stilhed drøm hukommelse navn ansigt hånd øje hjerte åndedræt puls rytme dans sang bølge storm regn frost mørke solopgang måne stjerne kilde skov mark vej kryds omvej labyrint port have tårn kælder loft rum hjørne grænse hjul kugle terning mønt maske kappe krone ring spiral cirkel kvadrat linje prik vind rejse gave offer løgn hemmelighed gæld løfte tvivl tro tilfældighed skæbne vane bryde bøje falde flyve gemme grave huske glemme hviske lede låse mærke nynne omfavne opløse pege rense risikere samle skjule skifte slippe smelte spørge svæve synke tænde tømme vække vende våge åbne lukke ånde danse dryppe fryse bevæge tom fuld blød hård skarp stille høj sprød vild fremmed gammel ny skjult fælles forkert mørk langsom hurtig tung let skør blind døv bar hel brudt tavs varm kold sulten tørstig søvnig vågen skæv rund'.split(' ');
+const ALL='tærskel spejl aske bro støj nøgle ekko tåge tråd sprække lys sne ild ur dør skygge glimt sand vand sten kompas rod frø hul væg tag stige snor knude klokke nål fjer knogle mælk salt honning jern kobber glas lampe kort bog brev stemme hvisken skrig stilhed drøm hukommelse navn ansigt hånd øje hjerte åndedræt puls rytme dans sang bølge storm regn frost mørke solopgang måne stjerne kilde skov mark vej kryds omvej labyrint port have tårn kælder loft rum hjørne grænse hjul kugle terning mønt maske kappe krone ring spiral cirkel kvadrat linje prik vind rejse gave offer løgn hemmelighed gæld løfte tvivl tro tilfældighed skæbne vane æon kalender tid år time øjeblik nat dag dagning skumring aften morgen vinter sommer forår efterår evighed begyndelse ende fødsel død liv arv minde fortid fremtid olie blad blod ben hud mave tunge tand hår hals ryg fod kød sved tåre smerte søvn sex lyst ar nerve marv strube sorg glæde vrede skam skyld længsel savn kærlighed had frygt håb jalousi ensomhed ømhed ro mod kæreste ven mor far barn bedstemor farfar morfar søster bror nabo elsker fjende lærer dæmon gud gudinde ånd magi engel spøgelse hund ugle krage ræv ulv slange kat bjørn edderkop sommerfugl hest ravn hare hjort bi flagermus drage heks orakel profet narr skælm fortryllelse forbandelse velsignelse ritual besværgelse alter sigil kaos orden vilje ønske sandhed illusion visdom dumhed latter leg spil tilfælde held uheld tegn varsel trance ekstase tomhed intet alt afgrund top kløft bund overflade indgang udgang vindue trappe gulv mur grav kirkegård ruin tempel hus hjem by gade træ gren bark blomst rose torn frugt æble jord ler støv rust kul sølv guld perle krystal is damp røg flamme gnist vin te mynte brød kniv sværd bæger stav blæk papir side bogstav ord tal sprog billede kode signal radio plade bånd net fælde bur lås kæde pil bue skjold hat sko slør dug seng kop skål krukke flaske kiste lomme bryde bøje falde flyve gemme grave huske glemme hviske lede låse mærke nynne omfavne opløse pege rense risikere samle skjule skifte slippe smelte spørge svæve synke tænde tømme vække vende våge åbne lukke ånde danse dryppe fryse bevæge elske hade græde savne sørge skamme skælve brænde binde bære bede bygge dele dukke flytte fortælle fange finde følge gætte give hente jage kalde kaste kysse lege lytte løfte male nære plante ramme række sove synge stjæle sætte tale tvivle tilgive tabe vente vise væve ønske ofre spinde sprænge knuse rive sprede spille skabe ødelægge tilbede forbande velsigne forvandle begrave tom fuld blød hård skarp stille høj sprød vild fremmed gammel ny skjult fælles forkert mørk langsom hurtig tung let skør blind døv bar hel brudt tavs varm kold sulten tørstig søvnig vågen skæv rund lilla brun sort hvid rød blå grøn gul grå violet gylden grim hellig vanhellig ond god from vred bange modig sød bitter sur rolig urolig ensom tryg utryg nøgen våd tør rå ren snavset ægte falsk evig flygtig dyb flad stejl tyk tynd lang stor lille fjern nær lukket fri fanget tæt løs stram svag stærk sårbar sjov alvorlig glad trist lykkelig'.split(' ');
 const iV=ALL.indexOf('bryde'),iA=ALL.indexOf('tom');
 const NOUNS=ALL.slice(0,iV),VERBS=ALL.slice(iV,iA),ADJ=ALL.slice(iA);
 const pk=a=>a[Math.random()*a.length|0];
@@ -1106,8 +1170,11 @@ const IC={
   audio:'<svg class="ic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg>',
   video:'<svg class="ic" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M10.5 9.5v5l4-2.5z"/></svg>',
   flame:'<svg class="ic big" viewBox="0 0 24 24"><path d="M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z"/></svg>',
+  skygge:'<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>',
+  stemme:'<svg class="ic big" viewBox="0 0 24 24"><path d="M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z"/><rect x="10.5" y="12" width="3" height="5" rx="1.5"/></svg>',
   del:'<svg viewBox="0 0 24 24" width="24" height="24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg>'
 };
+const SK=['Det, jeg ikke vil se','Hvor jeg lægger det','Hvad det beskytter','Hvad den vil'];
 const logHue=()=>Math.round(((mood===null?hue:mood)%360+360)%360);
 function moonPhase(ts){const d=(ts/86400000+2440587.5-2451550.1)/29.530588853;return d-Math.floor(d)}
 function moonSvg(p,size){
@@ -1150,7 +1217,7 @@ function logAdd(e){
 function logSigil(){logAdd({k:'sigil',t:Date.now(),h:logHue()})}
 function logCard(d,id,rev){
   const now=Date.now(),pos=[...$('#spread').children].indexOf(d);
-  if(spread===1||!curRead||now-curRead.t>20*60e3)curRead=logAdd({k:'kort',t:now,h:logHue(),n:spread,cards:[]});
+  if(spread===1||!curRead||now-curRead.t>20*60e3)curRead=logAdd(Object.assign({k:'kort',t:now,h:logHue(),n:spread,cards:[]},spread===4?{s:1}:{}));
   curRead.cards.push({id,rev,pos});logPut(curRead);logDirty=true;
   if(secIdx===7)logRender();
 }
@@ -1158,13 +1225,15 @@ function logCard(d,id,rev){
 /* Tegning */
 function markBody(e){
   let out='';
+  if(e.s)out+=IC.skygge;
   if(e.k==='kort')out+='<span class="thumbs">'+[...e.cards].sort((a,b)=>a.pos-b.pos).map(c=>`<span${c.rev?' style="transform:rotate(180deg)"':''}>${face(c.id)}</span>`).join('')+'</span>';
   if(e.k==='sigil')out+=IC.flame;
+  if(e.k==='stemme')out+=IC.stemme;
   if(e.att&&e.att.length)out+='<span class="att">'+e.att.map(a=>IC[a.type]).join('')+'</span>';
   return out;
 }
 function detailHtml(e){
-  const names=e.k==='kort'?'<ul class="names">'+[...e.cards].sort((a,b)=>a.pos-b.pos).map(c=>`<li>${e.n===10?(c.pos+1)+' · ':''}${cname(c.id)}${c.rev?' (omvendt)':''}</li>`).join('')+'</ul>':'';
+  const names=e.k==='kort'?'<ul class="names">'+[...e.cards].sort((a,b)=>a.pos-b.pos).map(c=>`<li>${e.n===10?(c.pos+1)+' · ':e.n===4&&SK[c.pos]?SK[c.pos]+' · ':''}${cname(c.id)}${c.rev?' (omvendt)':''}</li>`).join('')+'</ul>':'';
   const live=rec&&recTarget===e.id?' live':'';
   return `<div class="det">${names}<div class="media"></div><div class="tools">`+
     `<button data-act="file" aria-label="Tilføj billede, lyd eller video" title="Tilføj billede, lyd eller video">${$('#bogfoto').innerHTML}</button>`+
